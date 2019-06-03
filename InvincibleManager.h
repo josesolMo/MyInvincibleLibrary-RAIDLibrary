@@ -1,0 +1,26 @@
+
+#ifndef MYINVINCIBLELIBRARY_RAIDLIBRARY_METADATADB_INVINCIBLEMANAGER_H
+#define MYINVINCIBLELIBRARY_RAIDLIBRARY_METADATADB_INVINCIBLEMANAGER_H
+
+
+/**
+ * Header de InvincibleManager
+ *
+ * @since 03/06/19
+ */
+
+
+class InvincibleManager {
+
+private:
+
+
+public:
+
+    ///Constructores
+
+
+};
+
+
+#endif //MYINVINCIBLELIBRARY_RAIDLIBRARY_METADATADB_INVINCIBLEMANAGER_H

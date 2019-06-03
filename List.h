@@ -1,0 +1,24 @@
+
+#ifndef MYINVINCIBLELIBRARY_RAIDLIBRARY_METADATADB_LIST_H
+#define MYINVINCIBLELIBRARY_RAIDLIBRARY_METADATADB_LIST_H
+
+
+/**
+ * Header de List.
+ *
+ * @since 02/06/19
+ */
+
+
+class List {
+
+private:
+
+
+public:
+
+
+};
+
+
+#endif //MYINVINCIBLELIBRARY_RAIDLIBRARY_METADATADB_LIST_H
