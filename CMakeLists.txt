@@ -4,5 +4,7 @@ project(MyInvincibleLibrary-RAIDLibrary-MetadataDB)
 set(CMAKE_CXX_STANDARD 14)
 
 add_executable(MyInvincibleLibrary-RAIDLibrary-MetadataDB main.cpp
-        List.cpp List.h Node.cpp Node.h Imagen.cpp Imagen.h
-        InvincibleManager.cpp InvincibleManager.h Galeria.cpp Galeria.h)
+        Galeria.cpp Galeria.h
+        InvincibleManager.cpp InvincibleManager.h Image.cpp Image.h
+        List.cpp List.h MetadataDB.cpp MetadataDB.h Node.cpp Node.h
+        RAIDLibrary.cpp RAIDLibrary.h)

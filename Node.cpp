@@ -16,8 +16,8 @@
  * Costructor de Node.
  * @param _imagen
  */
-Node::Node(Imagen* _imagen) {
-    imagen = _imagen;
+Node::Node(Image* _image) {
+    image = _image;
 }
 
 
@@ -34,16 +34,16 @@ Node::Node(Imagen* _imagen) {
  * Getter de imagen de Node.
  * @return Imagen
  */
-Imagen* Node::getImagen() {
-    return imagen;
+Image* Node::getImage() {
+    return image;
 }
 
 /**
  * Setter de imagen de Node.
  * @param _imagen
  */
-void Node::setImagen(Imagen* _imagen) {
-    imagen = _imagen;
+void Node::setImage(Image* _image) {
+    image = _image;
 }
 
 /**

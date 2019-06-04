@@ -3,6 +3,12 @@
 #define MYINVINCIBLELIBRARY_RAIDLIBRARY_METADATADB_LIST_H
 
 
+#include <iostream>
+#include "Node.h"
+
+using namespace std;
+
+
 /**
  * Header de List.
  *
@@ -13,10 +19,26 @@
 class List {
 
 private:
-
+    Node* head;
+    int len;
 
 public:
 
+    ///Constructores
+    List();
+
+    ///Metodos
+    void newNode(Image* _image);
+    void deleteNode(Image* _image);
+    Node* getNode(int _index);
+    Node* getNode(string _nombre);
+    void printList();
+
+    ///Getters & Setters
+    Node* getHead();
+    void setHead(Node* _head);
+    int getLen();
+    void setLen(int _len);
 
 };
 

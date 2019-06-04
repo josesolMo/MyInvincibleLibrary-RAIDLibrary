@@ -12,5 +12,5 @@ using namespace std;
 
 
 int main() {
-    cout << "HOLS" << endl;
+    cout << "MyInvincibleLibrary" << endl;
 }

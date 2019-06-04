@@ -2,7 +2,7 @@
 #ifndef MYINVINCIBLELIBRARY_RAIDLIBRARY_METADATADB_NODE_H
 #define MYINVINCIBLELIBRARY_RAIDLIBRARY_METADATADB_NODE_H
 
-#include "Imagen.h"
+#include "Image.h"
 
 
 /**
@@ -16,7 +16,7 @@ class Node {
 
 private:
     ///Dato que guardara el nodo
-    Imagen* imagen;
+    Image* image;
     ///Referencia al nodo que esta siguiente a este
     Node* next;
 
@@ -24,14 +24,14 @@ public:
 
     ///Constructores
     Node();
-    Node(Imagen* _imagen);
+    Node(Image* _image);
 
     ///Metodos
     //-
 
     ///Getters & Setters
-    Imagen* getImagen();
-    void setImagen(Imagen* _imagen);
+    Image* getImage();
+    void setImage(Image* _image);
     Node* getNext();
     void setNext(Node* _next);
 };
