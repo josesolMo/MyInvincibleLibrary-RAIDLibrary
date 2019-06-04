@@ -12,5 +12,5 @@ using namespace std;
 
 
 int main() {
-    cout << "MyInvincibleLibrary" << endl;
+    cout << "MyInvincibleLibrary -> RAIDLibrary" << endl;
 }

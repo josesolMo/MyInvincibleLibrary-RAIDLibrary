@@ -28,9 +28,9 @@ List::List() {
  * Crea un nuevo Node con una Ficha para ingresarlo en List.
  * @param data - numero para la Ficha
  */
-void List::newNode(Image* _image){
+void List::newNode(string byte, string imageName){
 
-    Node* nNode = new Node(_image);
+    Node* nNode = new Node(byte, imageName);
 
     if (head == nullptr) {
         head = nNode;
@@ -41,6 +41,7 @@ void List::newNode(Image* _image){
     }
 
     len+=1;
+    delete nNode;
 
 }
 
@@ -48,11 +49,11 @@ void List::newNode(Image* _image){
  * Elimina un Node de List.
  * @param data
  */
-void List::deleteNode(Image* _image){
+void List::deleteNode(string _image){
     Node* delNode = nullptr;
     Node* temp = head;
     Node* aux = head;
-    while (aux != nullptr && aux->getImage() != _image) {
+    while (aux != nullptr && aux->getImageName() != _image) {
         temp = aux;
         aux = aux->getNext();
     }
@@ -75,6 +76,32 @@ void List::deleteNode(Image* _image){
 
     len-=1;
 
+    delete delNode;
+    delete temp;
+    delete aux;
+
+}
+
+/**
+ * Busca el indice del Node si se le ingresa un nombre para buscarlo
+ * @param _nombre
+ * @return int
+ */
+int List::getIndex(string _nombre) {
+    Node* temp = head;
+    int i = 0;
+    while (temp != nullptr) {
+        if (temp->getImageName() == _nombre) {
+            return i;
+        }
+        i++;
+        temp = temp->getNext();
+    }
+
+    delete temp;
+
+    ///Retorna -1 si no lo encuentra
+    return -1;
 }
 
 /**
@@ -82,10 +109,11 @@ void List::deleteNode(Image* _image){
  * @param posicion
  * @return Node
  */
-Node *List::getNode(int _index) {
+Node* List::getNode(int _index) {
     Node* temp = nullptr;
-    if (_index <= len) {
-        int i = 1;
+    ///_index = [0 , len]
+    if (_index >= 0 && _index <= len) {
+        int i = 0;
         temp = head;
         while (i != _index) {
             temp = temp->getNext();
@@ -96,23 +124,26 @@ Node *List::getNode(int _index) {
 }
 
 /**
- * Retorna un node por su letra.
+ * Retorna un Node por su nombre.
  * @param letra
  * @return Node
  */
 Node* List::getNode(string _nombre) {
     Node* temp = head;
     while (temp != nullptr) {
-        if (temp->getImage()->getNombre() == _nombre) {
+        if (temp->getImageName() == _nombre) {
             return temp;
         }
         temp = temp->getNext();
     }
+
+    delete temp;
+
     return nullptr;
 }
 
 /**
- * Imprime los nodos en List.
+ * Imprime los Nodes en List.
  */
 void List::printList() {
     cout << "length: " << len << "\n[ ";
@@ -120,14 +151,17 @@ void List::printList() {
     while (temp != nullptr) {
         ///Para que no imprima el ultimo con una coma
         if (temp->getNext() == nullptr) {
-            cout << temp->getImage()->getNombre() ;
+            cout << temp->getImageName();
             break;
         }
-        cout << temp->getImage()->getNombre() << ", ";
+        cout << temp->getImageName() << ", ";
         temp = temp->getNext();
     }
 
     cout << " ]" << endl;
+
+    delete temp;
+
 }
 
 

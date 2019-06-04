@@ -15,25 +15,28 @@
 class Node {
 
 private:
-    ///Dato que guardara el nodo
-    Image* image;
-    ///Referencia al nodo que esta siguiente a este
+    string byte;
     Node* next;
+    string imageName;
+    bool pairity;
 
 public:
-
     ///Constructores
     Node();
-    Node(Image* _image);
+    Node(string byte, string imageName);
 
     ///Metodos
     //-
 
     ///Getters & Setters
-    Image* getImage();
-    void setImage(Image* _image);
+    string getByte();
+    void setByte(string _byte);
     Node* getNext();
     void setNext(Node* _next);
+    string getImageName();
+    void setImageName(string imageName);
+    bool isPairity();
+    void setPairity(bool _pairity);
 };
 
 

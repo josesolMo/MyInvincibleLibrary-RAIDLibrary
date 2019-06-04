@@ -23,13 +23,13 @@ private:
     int len;
 
 public:
-
     ///Constructores
     List();
 
     ///Metodos
-    void newNode(Image* _image);
-    void deleteNode(Image* _image);
+    void newNode(string byte, string imageName);
+    void deleteNode(string _image);
+    int getIndex(string _nombre);
     Node* getNode(int _index);
     Node* getNode(string _nombre);
     void printList();

@@ -16,8 +16,11 @@
  * Costructor de Node.
  * @param _imagen
  */
-Node::Node(Image* _image) {
-    image = _image;
+Node::Node(string _byte, string _imageName) {
+    byte = _byte;
+    next = nullptr;
+    imageName = _imageName;
+    pairity = false;
 }
 
 
@@ -31,19 +34,19 @@ Node::Node(Image* _image) {
 
 
 /**
- * Getter de imagen de Node.
- * @return Imagen
+ * Getter de byte de Node.
+ * @return string
  */
-Image* Node::getImage() {
-    return image;
+string Node::getByte() {
+    return byte;
 }
 
 /**
- * Setter de imagen de Node.
- * @param _imagen
+ * Setter de byte de Node.
+ * @param _byte
  */
-void Node::setImage(Image* _image) {
-    image = _image;
+void Node::setByte(string _byte) {
+    byte = _byte;
 }
 
 /**
@@ -60,4 +63,32 @@ Node* Node::getNext() {
  */
 void Node::setNext(Node* _next) {
     next = _next;
+}
+
+/**
+ * Getter de imageName de Node.
+ * @return nombre
+ */
+string Node::getImageName() {
+    return imageName;
+}
+
+/**
+ * Setter de xxxxxx de Node.
+ * @param xxxxx
+ */
+void Node::setImageName(string _imageName) {
+    imageName = _imageName;
+}
+
+bool Node::isPairity() {
+    return pairity;
+}
+
+/**
+ * Setter de xxxxxx de Node.
+ * @param xxxxx
+ */
+void Node::setPairity(bool _pairity) {
+    pairity = _pairity;
 }
