@@ -26,6 +26,10 @@ public:
 
 
     ///Getters & Setters
+    List* getBitList();
+    void setBitList(List *_list);
+    int getId();
+    void setId(int _id);
 
 };
 
