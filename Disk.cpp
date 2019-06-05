@@ -22,8 +22,6 @@ Disk::Disk(int _id) {
 }
 
 
-
-
 ///Metodos
 
 
@@ -33,35 +31,5 @@ Disk::Disk(int _id) {
 ///Getters & Setters
 
 
-/**
- * Getter de bitList de Disk.
- * @return lista
- */
-List* Disk::getBitList() {
-    return bitList;
-}
-
-/**
- * Setter de bitList de Disk.
- * @param _bitList
- */
-void Disk::setBitList(List* _bitList) {
-    bitList = _bitList;
-}
-
-/**
- * Getter de id de Disk.
- * @return int
- */
-int Disk::getId() {
-    return 0;
-}
-
-/**
- * Setter de id de Disk.
- * @param _id
- */
-void Disk::setId(int _id) {
-    id = _id;
-}
+//-
 

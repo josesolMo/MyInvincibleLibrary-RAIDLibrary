@@ -23,8 +23,6 @@ RAIDController::RAIDController() {
     disk2 = new Disk(2);
     disk3 = new Disk(3);
 
-    actualImage = nullptr;
-
     actualSplit1 = "";
     actualSplit2 = "";
     actualSplit3 = "";
@@ -133,22 +131,6 @@ void RAIDController::setDisk3(Disk *_disk3) {
 }
 
 /**
- * Getter de actualImage de RAIDController.
- * @return imagen
- */
-Image* RAIDController::getActualImage() {
-    return actualImage;
-}
-
-/**
- * Setter de actualImage de RAIDController.
- * @param _actualImage
- */
-void RAIDController::setActualImage(Image *_actualImage) {
-
-}
-
-/**
  * Getter de actualSplit1 de RAIDController.
  * @return string
  */
@@ -227,4 +209,3 @@ int RAIDController::getParityDiskIndex() {
 void RAIDController::setParityDiskIndex(int _parityDiskIndex) {
     parityDiskIndex = _parityDiskIndex;
 }
-

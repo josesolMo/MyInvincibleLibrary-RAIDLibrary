@@ -18,7 +18,6 @@ class Image {
 
 private:
     string nombre;
-    string binArray;
 
 public:
     ///Constructores

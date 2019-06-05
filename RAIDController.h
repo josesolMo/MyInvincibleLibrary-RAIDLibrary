@@ -21,8 +21,6 @@ private:
     Disk* disk2;
     Disk* disk3;
 
-    Image* actualImage;
-
     string actualSplit1;
     string actualSplit2;
     string actualSplit3;
@@ -48,9 +46,6 @@ public:
     void setDisk2(Disk *_disk2);
     Disk* getDisk3();
     void setDisk3(Disk *_disk3);
-
-    Image* getActualImage();
-    void setActualImage(Image* _actualImage);
 
     //Splits y Parity pueden ser un Node
 
