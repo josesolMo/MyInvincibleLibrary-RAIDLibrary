@@ -18,15 +18,17 @@
  * @param _raidLibrary
  */
 RAIDController::RAIDController() {
-    disk1 = new Disk();
-    disk2 = new Disk();
-    disk3 = new Disk();
-    disk4 = new Disk();
+    disk0 = new Disk(0);
+    disk1 = new Disk(1);
+    disk2 = new Disk(2);
+    disk3 = new Disk(3);
 
     actualSplit1 = "";
     actualSplit2 = "";
     actualSplit3 = "";
     actualParity = "";
+
+    parityDiskIndex = 0;
 
 }
 
@@ -44,9 +46,41 @@ void RAIDController::splitImage(Image *image) {
 
 }
 
+/**
+ * Cambia el parityDiskIndex para saber cual disk será el que continua guardando el
+ * byte de paridad. Va en orden ascendente hasta llegar al 3, ahí se devuelve al 0.
+ */
+void RAIDController::nextParityDiskIndex() {
+
+    if (parityDiskIndex == 3) {
+        parityDiskIndex = 0;
+    } else if (parityDiskIndex >= 0) {
+        parityDiskIndex++;
+    } else {
+        cout << "ParityDiskIndex out of bounds: " << parityDiskIndex << endl;
+    }
+
+}
+
 
 ///Getters & Setters
 
+
+/**
+ * Getter de disk0 de RAIDController.
+ * @return disk
+ */
+Disk *RAIDController::getDisk0() {
+    return disk0;
+}
+
+/**
+ * Setter de disk0 de RAIDController.
+ * @param _disk0
+ */
+void RAIDController::setDisk0(Disk *_disk0) {
+    disk0 = _disk0;
+}
 
 /**
  * Getter de disk1 de RAIDController.
@@ -94,22 +128,6 @@ Disk *RAIDController::getDisk3() {
  */
 void RAIDController::setDisk3(Disk *_disk3) {
     disk3 = _disk3;
-}
-
-/**
- * Getter de disk4 de RAIDController.
- * @return disk
- */
-Disk *RAIDController::getDisk4() {
-    return disk4;
-}
-
-/**
- * Setter de disk4 de RAIDController.
- * @param _disk4
- */
-void RAIDController::setDisk4(Disk *_disk4) {
-    disk4 = _disk4;
 }
 
 /**
@@ -174,4 +192,20 @@ string RAIDController::getActualParity() {
  */
 void RAIDController::setActualParity(string _actualParity) {
     actualParity = _actualParity;
+}
+
+/**
+ * Getter de parityDiskIndex de RAIDController.
+ * @return index
+ */
+int RAIDController::getParityDiskIndex() {
+    return parityDiskIndex;
+}
+
+/**
+ * Setter de parityDiskIndex de RAIDController.
+ * @param _parityDiskIndex
+ */
+void RAIDController::setParityDiskIndex(int _parityDiskIndex) {
+    parityDiskIndex = _parityDiskIndex;
 }

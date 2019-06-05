@@ -20,7 +20,7 @@ Node::Node(string _byte, string _imageName) {
     byte = _byte;
     next = nullptr;
     imageName = _imageName;
-    pairity = false;
+    parity = false;
 }
 
 
@@ -74,21 +74,21 @@ string Node::getImageName() {
 }
 
 /**
- * Setter de xxxxxx de Node.
- * @param xxxxx
+ * Setter de imageName de Node.
+ * @param _imageName
  */
 void Node::setImageName(string _imageName) {
     imageName = _imageName;
 }
 
-bool Node::isPairity() {
-    return pairity;
+bool Node::isParity() {
+    return parity;
 }
 
 /**
- * Setter de xxxxxx de Node.
+ * Setter de parity de Node.
  * @param xxxxx
  */
-void Node::setPairity(bool _pairity) {
-    pairity = _pairity;
+void Node::setParity(bool _parity) {
+    parity = _parity;
 }

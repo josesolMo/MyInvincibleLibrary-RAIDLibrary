@@ -18,7 +18,7 @@ private:
     string byte;
     Node* next;
     string imageName;
-    bool pairity;
+    bool parity;
 
 public:
     ///Constructores
@@ -35,8 +35,8 @@ public:
     void setNext(Node* _next);
     string getImageName();
     void setImageName(string imageName);
-    bool isPairity();
-    void setPairity(bool _pairity);
+    bool isParity();
+    void setParity(bool _parity);
 };
 
 

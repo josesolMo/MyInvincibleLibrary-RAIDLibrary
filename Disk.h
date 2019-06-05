@@ -16,10 +16,11 @@ class Disk {
 
 private:
     List* bitList;
+    int id;
 
 public:
     ///Constructores
-    Disk();
+    Disk(int _id);
 
     ///Metodos
 

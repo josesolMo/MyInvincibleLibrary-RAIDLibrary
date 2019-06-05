@@ -16,8 +16,9 @@
 /**
  * Constructor de Disk.
  */
-Disk::Disk() {
-
+Disk::Disk(int _id) {
+    bitList = new List();
+    id = _id;
 }
 
 
