@@ -33,9 +33,10 @@ int main(int argc, char **argv) {
     raidController = new RAIDController();
 
 
-    Image* tImage = new Image("landscape");
-    tImage->testImage();
+    Image* tImage = new Image("coachella");
+    //tImage->testImage();
     tImage->toBinary();
+    tImage->toBmp();
 
 
 

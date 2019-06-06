@@ -1,7 +1,10 @@
 
 #include <fstream>
 #include <cmath>
+#include <iomanip>
 #include "Image.h"
+
+using namespace std;
 
 
 /**
@@ -59,6 +62,11 @@ string Image::decimalToBinary(int d) {
 
 }
 
+/**
+ * Convierte un numero binario a decimal.
+ * @param b
+ * @return decimal
+ */
 int Image::binaryToDecimal(string b) {
 
     int bin = stoi(b);
@@ -80,7 +88,10 @@ int Image::binaryToDecimal(string b) {
 
 }
 
-
+/**
+ * Hace una lectura de los bytes de la imagen .bmp y guarda cada uno, en binario.
+ * @return bitString
+ */
 string Image::toBinary() {
 
     string binaryData = "";
@@ -152,6 +163,108 @@ string Image::toBinary() {
 
 }
 
+/**
+ * Genrara un archivo .bmp a partir de un bitString.
+ */
+void Image::toBmp() {
+
+    ///String binario con la informacion modificada proveniente de los discos.
+    string binBmp = modBinString;
+
+    ///Obtiene el primer byte: Indicador de cuantos bytes adicionales tiene el binString
+    string additionalBytesIndicator = binBmp.substr (0,8);
+    cout << "\nadditionalBytesIndicator(binary): '" << additionalBytesIndicator << "'" << endl;
+
+    ///int con la cantidad de bytes adicionales al final del bitString
+    int aBInd = binaryToDecimal(additionalBytesIndicator);
+    cout << "additionalBytesIndicator(decimal): " << aBInd << endl;
+
+    cout << "\nFirst 16 -> '" << binBmp.substr (0,16) << "'" << endl;
+
+    ///Elimina el indicador del inicio del binString
+    binBmp.erase(0,8);
+
+    cout << "First 16 w/o -> '" << binBmp.substr (0,16) << "'\n" << endl;
+
+    cout << "Last -> '" << binBmp.substr (binBmp.length()-(16 + 8*aBInd), (16 + 8*aBInd)) << "'" << endl;
+
+    ///Por medio del indicador se sabe cuantos bits se deben eliminar, y son eliminados del final del binString
+    binBmp.erase(binBmp.length()-(8*aBInd), (8*aBInd));
+
+    cout << "Last w/o -> '" << binBmp.substr(binBmp.length()-24, 24) << "'\n" << endl;
+
+    ///Verifica que su conversion sea igual al rawData guardado en su primera lectura
+    if (binBmp == rawBinString) {
+        cout << "Ready for recreating :)\n" << endl;
+    } else {
+        cout << "rawBinString is not the same :(\n" << endl;
+    }
+
+    ///Variales para la conversion
+    int byteValue;
+    int index = 0;
+    string actualByte;
+    float totalByteLength = binBmp.length() / 8;
+
+    ///Archivo nuevo por crear y escribir
+    string newFileName = "new" + nombre;
+    newFileName = newFileName  + ".bmp";
+    FILE* newFile = fopen(newFileName.c_str(),"a");
+
+    ///Recorrera el binString hasta que desaparezca
+    while (binBmp.length() > 0) {
+
+        if (true) { //index >= 0) {
+
+            if (binBmp.length() == 8) {
+
+                ///Elimina los ultimos bits del bitString
+                binBmp.erase(0, 8);
+
+                ///Ingresa EOF al final del nuevo archivo
+                fputc(EOF, newFile);
+
+                //cout << index << ": " << EOF << endl;
+
+            } else {
+
+                ///Lectura del bitString
+
+                ///Toma los primeros 8 bits del bitString
+                actualByte = binBmp.substr(0, 8);
+
+                ///Elimina esos bits del bitString
+                binBmp.erase(0, 8);
+
+                ///Convierte el byte (8 bits) a decimal
+                byteValue = binaryToDecimal(actualByte);
+
+                ///Escribe el valor al nuevo archivo
+                fputc(byteValue, newFile);
+
+                //cout << index << ": " << byteValue << endl;
+
+            }
+
+        }
+
+        index++;
+
+        if (index % 1000 == 0) {
+
+            float percentageOfCompletition = index/(totalByteLength) * 100;
+
+            cout << "Completed: " << fixed << setprecision(2) << percentageOfCompletition << " %" << endl;
+
+        }
+
+    }
+
+    cout << "Completed: " << 100.00 << "%" << endl;
+    cout << "\nRecreation complete: " + newFileName + " created." << endl;
+
+}
+
 
 /**
  * Llama a los metodos para probar la imagen
@@ -166,7 +279,7 @@ void Image::testImage() {
 }
 
 /**
- * Monstrara la informacion del Header de la imagen .bmp.
+ * Mostrara la informacion del Header de la imagen .bmp.
  */
 void Image::getHeader() {
 
@@ -232,7 +345,7 @@ void Image::printBytes() {
         while (byteValue != EOF) {
             if (index >= 0) {
                 byteValue = fgetc(file);
-                cout << index << ":   " << byteValue << endl;
+                //cout << index << ":   " << byteValue << endl;
             }
             index++;
         }
@@ -276,7 +389,7 @@ void Image::getFileLength() {
 }
 
 /**
- * Crea un nuevo archivo .bmp a partir del archivo existente
+ * Crea un nuevo archivo .bmp a partir del archivo existente inmediatamente
  */
 void Image::recreateFile() {
 
@@ -338,7 +451,4 @@ string Image::getNombre() {
 void Image::setNombre(string _nombre) {
     nombre = _nombre;
 }
-
-
-
 
