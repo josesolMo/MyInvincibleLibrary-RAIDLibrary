@@ -25,7 +25,11 @@ public:
     Image(string _nombre);
 
     ///Metodos
-    //-
+    void testImage();
+    void getHeader();
+    void printBytes();
+    void getFileLength();
+    void recreateFile();
 
     ///Getters & Setters
     string getNombre();

@@ -2,7 +2,7 @@
 #ifndef MYINVINCIBLELIBRARY_RAIDLIBRARY_METADATADB_GALERIA_H
 #define MYINVINCIBLELIBRARY_RAIDLIBRARY_METADATADB_GALERIA_H
 
-#import "List.h"
+#include "List.h"
 #include <iostream>
 
 using namespace std;
