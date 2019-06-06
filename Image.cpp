@@ -1,5 +1,6 @@
 
 #include <fstream>
+#include <cmath>
 #include "Image.h"
 
 
@@ -18,6 +19,138 @@ Image::Image(string _nombre) {
 
 
 ///Metodos
+
+
+/**
+ * Convierte un numero decimal a binario.
+ * @param d
+ * @return binary
+ */
+string Image::decimalToBinary(int d) {
+
+    int bin = 0;
+    int i = 1;
+
+    while(d > 0) {
+
+        bin += (d % 2) * i;
+        d /= 2;
+        i *= 10;
+
+    }
+
+    ///Lo convierte a string
+    string b = to_string(bin);
+
+    int len = b.length();
+
+    ///Para hacer que siempre tengan 8 digitos
+    if (len != 8) {
+        int z = 8 - len;
+        while (z > 0) {
+            b = "0" + b;
+            z--;
+        }
+    }
+
+    //cout << b << endl;
+
+    return b;
+
+}
+
+int Image::binaryToDecimal(string b) {
+
+    int bin = stoi(b);
+
+    int dec = 0;
+    int i = 0;
+    int rem;
+
+    while (bin > 0) {
+        rem = bin % 10;
+        dec = dec + rem * pow(2,i);
+        i++;
+        bin /= 10;
+    }
+
+    //cout << dec << endl;
+
+    return dec;
+
+}
+
+
+string Image::toBinary() {
+
+    string binaryData = "";
+
+    int byteValue;
+    int index = 0;
+
+    ///Para abrir la imagen
+    string directory = "./Media/" + nombre + ".bmp";
+    FILE *file;
+    file = fopen(directory.c_str(), "rb");
+
+
+    if (file != NULL) {
+
+        while (byteValue != EOF) {
+            if (index >= 0) {
+
+                byteValue = fgetc(file);
+
+                binaryData += decimalToBinary(byteValue);
+
+            }
+            index++;
+        }
+
+        fclose(file);
+
+    } else {
+
+        printf("\nFile not found.");
+
+        return "";
+
+    }
+
+    ///Asigna el binaryData al atributo propio de la clase
+    rawBinString = binaryData;
+
+    ///Length de binaryData
+    int binLen = binaryData.length();
+
+    cout << "\nrawBinString: " << endl;
+    //cout << rawBinString << endl;
+    cout << "Length: " << rawBinString.length() << endl;
+    cout << "Additional bytes: " << additionalBytes << "\n" << endl;
+
+    ///Verifica que se pueda dividir exacto en tres discos, se suma 8 ya que siempre tendra el indicador
+    while ((((binLen + 8) % 3) != 0)) {
+        additionalBytes += 1;
+        binaryData += decimalToBinary(0);
+        binLen = binaryData.length();
+    }
+
+    ///Se agrega el Indicador de additionalBytes en bitString
+    binaryData = decimalToBinary(additionalBytes) + binaryData;
+
+    ///Guarda el binString modificado
+    ///Este sera utilizado en el RAID
+    modBinString = binaryData;
+
+
+    cout << "modBinString: " << endl;
+    //cout << modBinString << endl;
+    cout << "Length: " << modBinString.length() << endl;
+    cout << "Additional bytes: " << additionalBytes << " -> '" << modBinString.substr (0,8) << "'\n" << endl;
+
+    return binaryData;
+
+}
 
 
 /**
@@ -205,5 +338,7 @@ string Image::getNombre() {
 void Image::setNombre(string _nombre) {
     nombre = _nombre;
 }
+
+
 
 

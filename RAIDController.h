@@ -36,9 +36,11 @@ public:
     RAIDController();
 
     ///Metodos
+    string decimalToBinary(int d);
+    int binaryToDecimal(string b);
+
     void splitImage(Image* image);
     void nextParityDiskIndex();
-    void testGetImageHeader(string nombre);
 
     ///Getters & Setters
     Disk* getDisk0();

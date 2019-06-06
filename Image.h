@@ -18,13 +18,21 @@ class Image {
 
 private:
     string nombre;
-    string binArray;
+    string rawBinString;
+    string modBinString;
+    int additionalBytes;
 
 public:
     ///Constructores
     Image(string _nombre);
 
     ///Metodos
+    string decimalToBinary(int d);
+    int binaryToDecimal(string b);
+
+    string toBinary();
+    void toBmp();
+
     void testImage();
     void getHeader();
     void printBytes();

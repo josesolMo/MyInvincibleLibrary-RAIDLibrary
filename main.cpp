@@ -34,8 +34,8 @@ int main(int argc, char **argv) {
 
 
     Image* tImage = new Image("landscape");
-
     tImage->testImage();
+    tImage->toBinary();
 
 
 

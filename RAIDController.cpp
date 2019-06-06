@@ -3,6 +3,7 @@
 
 #include <fstream>
 #include <stdio.h>
+#include <cmath>
 
 
 
@@ -44,6 +45,67 @@ RAIDController::RAIDController() {
 
 
 /**
+ * Convierte un numero decimal a binario.
+ * @param d
+ * @return binary
+ */
+string RAIDController::decimalToBinary(int d) {
+
+    int bin = 0;
+    int i = 1;
+
+    while(d > 0) {
+
+        bin += (d % 2) * i;
+        d /= 2;
+        i *= 10;
+
+    }
+
+    ///Lo convierte a string
+    string b = to_string(bin);
+
+    int len = b.length();
+
+    ///Para hacer que siempre tengan 8 digitos
+    if (len != 8) {
+        int z = 8 - len;
+        while (z > 0) {
+            b = "0" + b;
+            z--;
+        }
+    }
+
+    cout << b << endl;
+
+    return b;
+
+}
+
+int RAIDController::binaryToDecimal(string b) {
+
+    int bin = stoi(b);
+
+    int dec = 0;
+    int i = 0;
+    int rem;
+
+    while (bin > 0) {
+        rem = bin % 10;
+        dec = dec + rem * pow(2,i);
+        i++;
+        bin /= 10;
+    }
+
+    cout << dec << endl;
+
+    return dec;
+
+
+}
+
+
+/**
  * Divide la imagen en [n cantidad] para ser ingresadas en los discos.
  * @param image
  */
@@ -66,99 +128,6 @@ void RAIDController::nextParityDiskIndex() {
     } else {
         cout << "ParityDiskIndex out of bounds: " << parityDiskIndex << endl;
     }
-
-}
-
-/**
- * Retorna el Header de una imagen bmp deseada.
- * @param nombre
- */
-void RAIDController::testGetImageHeader(string nombre) {
-
-    FILE* newFile = fopen("test3.bmp","a");
-
-    unsigned char imageData[54];
-    int byteValue;
-    int index = 0;
-
-    ///Para abrir la imagen
-    string directory = "./Media/" + nombre + ".bmp";
-    FILE *file;
-    file = fopen(directory.c_str(), "rb");
-
-    if (file != NULL) {
-        while (byteValue != EOF) {
-            if (index == 54) {
-                break;
-            } else {
-                byteValue = fgetc(file);
-                imageData[index] = byteValue;
-
-                index++;
-            }
-        }
-
-
-        ///Recorrido para verificar su contenido
-        rewind(file);
-        index = 0;
-        byteValue = 0;
-        cout << "CONTENT START:" << endl;
-        while (byteValue != EOF) {
-            if (index >= 0) {
-                byteValue = fgetc(file);
-                cout << index << ":   " << byteValue << endl;
-                fputc(byteValue,newFile);
-            }
-            index++;
-        }
-        cout << "CONTENT END." << endl;
-        ////////////////////////////////////////
-
-        fclose(file);
-
-    } else {
-        for (int i = 0; i < 29; i++) {
-            imageData[i]='\0';
-        }
-
-        printf("\nFile not found.");
-
-    }
-
-    int image_width = imageData[20-1] * 256 + imageData[19-1];
-    int image_height = imageData[24-1] * 256 + imageData[23-1];
-    int image_bits = imageData[29-1];
-
-    printf("\nImage width: %d \n", image_width);
-    printf("Image height: %d \n", image_height);
-    printf("%d bit image\n", image_bits);
-
-
-
-    ///Length
-
-
-
-    ifstream image( directory.c_str(), ios::binary | ios::in);
-
-    if (!image) {
-        cout << "Could not open." << endl;
-    } else {
-        //cout << "Success." << endl;
-    }
-
-
-    // get size of file
-    image.seekg(0,ifstream::end);
-    long size = image.tellg();
-    image.seekg(0);
-
-    cout << "\nFile Length: " << size << endl;
-
-    image.close();
-
-
 
 }
 
@@ -325,4 +294,5 @@ int RAIDController::getParityDiskIndex() {
 void RAIDController::setParityDiskIndex(int _parityDiskIndex) {
     parityDiskIndex = _parityDiskIndex;
 }
+
 
