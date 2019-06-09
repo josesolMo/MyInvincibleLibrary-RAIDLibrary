@@ -28,26 +28,23 @@ static RAIDController* raidController;
  * Main del Programa.
  */
 int main(int argc, char **argv) {
+
     cout << "MyInvincibleLibrary -> RAIDLibrary" << endl;
 
     raidController = new RAIDController();
 
 
     Image* tImage = new Image("coachella");
+
+    tImage->splitV2();
+
+    //tImage->compare();
+
+    //tImage->split();
+
     //tImage->testImage();
-    tImage->toBinary();
-    tImage->toBmp();
 
-
-
-
-
-
-
-    ////////////////////////////////////////////////////////////////////
-    ///                                                              ///
-    ///                       xxxxxxxxxxxxxxxx                       ///
-    ///                                                              ///
-    ////////////////////////////////////////////////////////////////////
+    //tImage->toBinary();
+    //tImage->toBmp();
 
 }

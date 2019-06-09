@@ -265,6 +265,487 @@ void Image::toBmp() {
 
 }
 
+/**
+ * Dividira la imagen en tres imagenes.
+ */
+void Image::split() {
+
+    ///Creacion del nombre de los archivos nuevos
+    string newFileName1 = "new1" + nombre + ".bmp";
+    string newFileName2 = "new2" + nombre + ".bmp";
+    string newFileName3 = "new3" + nombre + ".bmp";
+
+    ///Creacion en maquina de los archivos nuevos
+    FILE* newFile1 = fopen(newFileName1.c_str(),"a");
+    FILE* newFile2 = fopen(newFileName2.c_str(),"a");
+    FILE* newFile3 = fopen(newFileName3.c_str(),"a");
+
+    ///Tamaño del header
+    int headerLength = 54;
+    ///Tamaño del commonData
+    int commonDataLength = 138;
+
+    ///Tamaño total de la imagen
+    int fileLength = getFileLength();
+    ///Tamaño total de la imagen sin el Header (54)
+    int fileLengthWOH = fileLength - headerLength;
+    ///Tamaño total de la imagen sin el CommonData (138)
+    int fileLengthWOC = fileLength - commonDataLength;
+
+    cout << "fileLengthWOC: " << fileLengthWOC << endl;
+
+    ///Arrays para guardar la informacion de la imagen
+    int headerData[headerLength];
+    int commonDataTotal[commonDataLength];
+    int pixelDataTotal[fileLengthWOC];
+
+    ///Variables para el recorrido
+    int byteValue;
+    int index = 0;
+
+    ///Para abrir la imagen original
+    string directory = "./Media/" + nombre + ".bmp";
+    FILE *file;
+    file = fopen(directory.c_str(), "rb");
+
+    ///Recorrido para obtener el commonData y el PixelData
+    if (file != nullptr) {
+        while (byteValue != EOF) {
+
+            if (index < 138) {
+                byteValue = fgetc(file);
+                commonDataTotal[index] = byteValue;
+            } else {
+                byteValue = fgetc(file);
+                pixelDataTotal[index - commonDataLength] = byteValue;
+                //cout << "pixelDataTotal: " << index - commonDataLength << " -> " << pixelDataTotal[index - commonDataLength] << endl;
+            }
+
+            ///Incrementa el indice
+            index++;
+
+        }
+
+        ///Cierra el file al terminar de leer
+        fclose(file);
+
+    } else {
+
+        printf("\nFile not found.");
+
+    }
+
+
+
+
+    cout << "\nCommonData: "<< endl;
+
+    for (int i = 0; i < 138; i++) {
+        //cout << i <<"C: " << commonDataTotal[i] << endl;
+    }
+
+    cout << "\nPixelData: "<< endl;
+
+    for (int i = 0; i < fileLengthWOC; i++) {
+        //cout << i + 138 << "P: " << pixelDataTotal[i] << endl;
+    }
+
+
+
+
+
+    ///Altura de la imagen original total
+    int imageHeightTotal = commonDataTotal[24-1] * 256 + commonDataTotal[23-1];
+
+    ///Ancho de la imagen original y para las parciales
+    int imageWidth = commonDataTotal[20-1] * 256 + commonDataTotal[19-1];
+
+    ///Bytes en cada fila
+    int bytesPerRow = fileLengthWOC / imageHeightTotal;
+
+    cout << "\nBytesPerRow: " << bytesPerRow << endl;
+
+    float floatImageHeightTotal = imageHeightTotal;
+
+    float exactThird = floatImageHeightTotal / 3;
+
+    cout << "ExactThird: " << exactThird << endl;
+
+    ///Cantidad de filas extra para guardar la imagen
+    int extraRows = 3 - (imageHeightTotal % 3);
+
+    if (extraRows == 3) {
+        extraRows = 0;
+    }
+
+    cout << "ExtraRows: " << extraRows << endl;
+
+    int imageHeightFixed = imageHeightTotal + extraRows;
+
+    cout << "ImageHeightFixed: " << imageHeightFixed << endl;
+
+    ///El tercio del height modificado para que sea exacto
+    int aThirdHeightF = imageHeightFixed / 3;
+
+    cout << "aThirdHeightF: " << aThirdHeightF << endl;
+
+    ///Arrays que guardaran la informacion de los pixeles
+    int pixelData1[aThirdHeightF];
+    int pixelData2[aThirdHeightF];
+    int pixelData3[aThirdHeightF];
+
+    ///pixelDataN index
+    int z1 = 0;
+    int z2 = 0;
+    int z3 = 0;
+
+    ///pixelDataTotal index
+    int pixelIndex = 0;
+
+
+    for (int y = 0; y < imageHeightFixed; y++) {
+
+        for (int x = 0; x < bytesPerRow; x++) {
+
+            if (y < aThirdHeightF) {
+
+                pixelData1[z1] = pixelDataTotal[pixelIndex];
+                //cout << "Imagen1: " << z1 << ". FromTotalHeight: " << y << ". FromTotalWidth " << x << " -> " << pixelData1[z1] << endl;
+
+                z1++;
+
+                pixelIndex++;
+
+            }
+
+            else if (y < aThirdHeightF*2 ) {
+
+                //cout << y << " == " << aThirdHeightF*2 - 1 << " || " << extraRows << " == " << 2 << endl;
+
+                if ( ( y == (aThirdHeightF*2 - 1) ) && extraRows == 2 ) {
+                    pixelData2[z2] = 0;
+                    //cout << "02" << endl;
+                } else {
+                    pixelData2[z2] = pixelDataTotal[pixelIndex];
+                    pixelIndex++;
+                }
+
+                //cout << "Imagen2: " << z2 << ". FromTotalHeight: " << y << ". FromTotalWidth " << x << " -> " << pixelData2[z2] << endl;
+
+                z2++;
+
+            }
+
+            else {
+
+                //cout << y + 1 << " == " << imageHeightFixed << " || " << extraRows << " >= " << 1 << endl;
+
+                if (( y + 1 == (imageHeightFixed) ) && extraRows >= 1) {
+                    pixelData3[z3] = 0;
+                    //cout << "03" << endl;
+                } else {
+                    pixelData3[z3] = pixelDataTotal[pixelIndex];
+                    pixelIndex++;
+                }
+
+                //cout << "Imagen3: " << z3 << ". FromTotalHeight: " << y << ". FromTotalWidth " << x << " -> " << pixelData3[z3] << endl;
+
+                z3++;
+
+            }
+
+        }
+
+    }
+
+    cout << "\n\nDivision en arrays separados listos.\n" << endl;
+
+
+    ///Arrays que guardaran la informacion completa de las nuevas imagenes
+    int imageData1[fileLength];
+    int imageData2[fileLength];
+    int imageData3[fileLength];
+
+    ///Agrega el commonData al array de cada imagen
+    for (int i = 0; i < 137; i++) {
+        imageData1[i] = commonDataTotal[i];
+        imageData2[i] = commonDataTotal[i];
+        imageData3[i] = commonDataTotal[i];
+    }
+
+    int fixedFileLengthWOC = fileLengthWOC + extraRows*imageWidth*3;
+
+    cout << "fixedFileLengthWOC: " << fixedFileLengthWOC << endl;
+
+    ///Agrega la informacion de los pixeles a el array de cada imagen, el resto se completa en blanco.
+    for (int i = 0; i < fixedFileLengthWOC; i++) {
+
+        if (i < (fixedFileLengthWOC/3) ) {
+            imageData1[i + 137] = pixelData1[i];
+            imageData2[i + 137] = 255;
+            imageData3[i + 137] = 255;
+        } else if (i < (fixedFileLengthWOC/3)*2 ) {
+            imageData1[i + 137] = 255;
+            imageData2[i + 137] = pixelData2[i + (fixedFileLengthWOC/3)];
+            imageData3[i + 137] = 255;
+        } else {
+            imageData1[i + 137] = 255;
+            imageData2[i + 137] = 255;
+            imageData3[i + 137] = pixelData3[i + (fixedFileLengthWOC/3)*2];
+        }
+
+    }
+
+
+    int fixedFileLength = fileLength + extraRows*imageWidth*3;
+
+
+    for (int i = 0; i < fixedFileLength; i++) {
+        //cout << i << "-> " << "1: " << imageData1[i] << " 2: " << imageData2[i] << " 3: " << imageData3[i] << endl;
+
+        ///Escritura al nuevo archivo
+        fputc(imageData1[i], newFile1);
+        fputc(imageData2[i], newFile2);
+        fputc(imageData3[i], newFile3);
+
+    }
+
+    cout << "Recreation complete: " + newFileName1 + " created." << endl;
+    cout << "Recreation complete: " + newFileName2 + " created." << endl;
+    cout << "Recreation complete: " + newFileName3 + " created." << endl;
+
+
+
+
+
+    int image_width = commonDataTotal[20-1] * 256 + commonDataTotal[19-1];
+    int image_height = commonDataTotal[24-1] * 256 + commonDataTotal[23-1];
+    int image_bits = commonDataTotal[29-1];
+
+
+    printf("\nImage width: %d \n", image_width);
+    printf("Image height: %d \n", image_height);
+    printf("%d bit image\n", image_bits);
+
+
+}
+
+
+void Image::splitV2() {
+
+    ///Creacion del nombre de los archivos nuevos
+    string newFileName1 = "new1" + nombre + ".bmp";
+    string newFileName2 = "new2" + nombre + ".bmp";
+    string newFileName3 = "new3" + nombre + ".bmp";
+
+    ///Creacion en maquina de los archivos nuevos
+    FILE* newFile1 = fopen(newFileName1.c_str(),"a");
+    FILE* newFile2 = fopen(newFileName2.c_str(),"a");
+    FILE* newFile3 = fopen(newFileName3.c_str(),"a");
+
+
+
+
+    ///Tamaño del header
+    int headerLength = 54;
+    ///Tamaño del commonData
+    int commonDataLength = 138;
+
+    ///Tamaño total de la imagen
+    int fileLength = getFileLength();
+    ///Tamaño total de la imagen sin el Header (54)
+    int fileLengthWOH = fileLength - headerLength;
+    ///Tamaño total de la imagen sin el CommonData (138)
+    int fileLengthWOC = fileLength - commonDataLength;
+
+    cout << "fileLengthWOC: " << fileLengthWOC << endl;
+
+    ///Arrays para guardar la informacion de la imagen
+    int headerData[headerLength];
+    int commonDataTotal[commonDataLength];
+    int pixelDataTotal[fileLengthWOC];
+
+    ///Variables para el recorrido
+    int byteValue;
+    int index = 0;
+
+    ///Para abrir la imagen original
+    string directory = "./Media/" + nombre + ".bmp";
+    FILE *file;
+    file = fopen(directory.c_str(), "rb");
+
+    ///Recorrido para obtener el commonData y el PixelData
+    if (file != nullptr) {
+        while (byteValue != EOF) {
+
+            if (index < 138) {
+                byteValue = fgetc(file);
+                commonDataTotal[index] = byteValue;
+            } else {
+                byteValue = fgetc(file);
+                pixelDataTotal[index - commonDataLength] = byteValue;
+                //cout << "pixelDataTotal: " << index - commonDataLength << " -> " << pixelDataTotal[index - commonDataLength] << endl;
+            }
+
+            ///Incrementa el indice
+            index++;
+
+        }
+
+        ///Cierra el file al terminar de leer
+        fclose(file);
+
+    } else {
+
+        printf("\nFile not found.");
+
+    }
+
+
+
+    int aThird = fileLengthWOC / 3;
+
+    cout << "fileLengthWOC: " << fileLengthWOC << endl;
+
+    cout << "aThird: " << aThird << endl;
+
+
+
+
+    ///Arrays que guardaran la informacion completa de las nuevas imagenes
+    int imageData1[fileLength];
+    int imageData2[fileLength];
+    int imageData3[fileLength];
+
+
+    for (int i = 0; i < 138; i++) {
+
+        ///Escritura al nuevo archivo
+        fputc(commonDataTotal[i], newFile1);
+        fputc(commonDataTotal[i], newFile2);
+        fputc(commonDataTotal[i], newFile3);
+
+        cout << i << "-> " << "1: " << commonDataTotal[i] << " 2: " << commonDataTotal[i] << " 3: " << commonDataTotal[i] << endl;
+
+    }
+
+
+    if ( (fileLength % 3) == 1) {
+        fileLength += 2;
+    } else if ( (fileLength % 3) == 2) {
+        fileLength += 1;
+    }
+
+    cout << "fileLength: " << fileLength << ".   %3: " << (fileLength % 3) << endl;
+
+    int third = fileLength / 3;
+
+    cout << third << " third: " << third;
+
+
+
+
+
+    for (int i = 0; i < fileLength; i++) {
+
+        if (i < third) {
+
+            fputc(pixelDataTotal[i], newFile1);
+            fputc(255, newFile2);
+            fputc(255, newFile3);
+
+        }
+        else if (i < third*2) {
+
+            fputc(255, newFile1);
+            fputc(pixelDataTotal[i], newFile2);
+            fputc(255, newFile3);
+
+        } else {
+
+            fputc(255, newFile1);
+            fputc(255, newFile2);
+            fputc(pixelDataTotal[i], newFile3);
+
+        }
+
+    }
+
+
+
+}
+
+
+void Image::compare() {
+
+
+
+    ///Para abrir la imagen original
+    string directoryBlack = "./Media/black.bmp";
+    FILE *black;
+    black = fopen(directoryBlack.c_str(), "rb");
+
+    string directorySpiral = "./Media/spiral.bmp";
+    FILE *spiral;
+    spiral = fopen(directorySpiral.c_str(), "rb");
+
+    string directoryFive = "./Media/five.bmp";
+    FILE *five;
+    five = fopen(directoryFive.c_str(), "rb");
+
+    string directoryGame = "./Media/game.bmp";
+    FILE *game;
+    game = fopen(directoryGame.c_str(), "rb");
+
+    string directoryCoachella = "./Media/coachella.bmp";
+    FILE *coachella;
+    coachella = fopen(directoryCoachella.c_str(), "rb");
+
+    string directoryColor = "./Media/color.bmp";
+    FILE *color;
+    color = fopen(directoryColor.c_str(), "rb");
+
+    string directoryCorvette = "./Media/corvette.bmp";
+    FILE *corvette;
+    corvette = fopen(directoryCorvette.c_str(), "rb");
+
+
+    int byteValue;
+    int index = 0;
+
+    ///Recorrido para obtener el commonData y el PixelData
+    if (black != nullptr) {
+        while (byteValue != EOF) {
+
+            byteValue = fgetc(spiral);
+
+            cout << index << ":  ->  " <<
+                    "black: " << fgetc(black) << ".  spiral: " << byteValue << ".  five: " << fgetc(five)
+                 << ".  game: " << fgetc(game) << ".  coachella: " << fgetc(coachella)
+                 << ".  color: " << fgetc(color) << ".  corvette: " << fgetc(corvette) << endl;
+
+            index++;
+
+        }
+
+        ///Cierra el file al terminar de leer
+        fclose(black);
+        fclose(spiral);
+        fclose(five);
+        fclose(game);
+        fclose(coachella);
+        fclose(color);
+        fclose(corvette);
+
+    } else {
+
+        printf("\nFile not found.");
+
+    }
+
+
+}
+
 
 /**
  * Llama a los metodos para probar la imagen
@@ -345,7 +826,10 @@ void Image::printBytes() {
         while (byteValue != EOF) {
             if (index >= 0) {
                 byteValue = fgetc(file);
-                //cout << index << ":   " << byteValue << endl;
+                if (index == 18) {
+
+                }
+                cout << index << ":   " << byteValue << endl;
             }
             index++;
         }
@@ -364,7 +848,7 @@ void Image::printBytes() {
 /**
  * Muestra el tamaño del archivo (cantidad de bytes)
  */
-void Image::getFileLength() {
+int Image::getFileLength() {
 
     ///Para abrir la imagen
     string directory = "./Media/" + nombre + ".bmp";
@@ -385,6 +869,8 @@ void Image::getFileLength() {
     cout << "\nFile Length: " << size << endl;
 
     image.close();
+
+    return size;
 
 }
 
@@ -451,4 +937,8 @@ string Image::getNombre() {
 void Image::setNombre(string _nombre) {
     nombre = _nombre;
 }
+
+
+
+
 

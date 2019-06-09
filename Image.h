@@ -33,10 +33,16 @@ public:
     string toBinary();
     void toBmp();
 
+    void split();
+
+    void splitV2();
+
+    void compare();
+
     void testImage();
     void getHeader();
     void printBytes();
-    void getFileLength();
+    int getFileLength();
     void recreateFile();
 
     ///Getters & Setters
