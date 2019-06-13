@@ -25,19 +25,20 @@ private:
 public:
     ///Constructores
     Image(string _nombre);
+    Image(string _nombre, string _rawBinaryString);
 
     ///Metodos
     string decimalToBinary(int d);
     int binaryToDecimal(string b);
+
+    string setBinaryDataForStorage();
 
     string toBinary();
     void toBmp();
 
     void split();
 
-    void splitV2();
-
-    void compare();
+    bool save();
 
     void testImage();
     void getHeader();
@@ -48,6 +49,8 @@ public:
     ///Getters & Setters
     string getNombre();
     void setNombre(string _nombre);
+    string getRawBinString();
+    void setRawBinString(string _rawBinString);
 
 };
 

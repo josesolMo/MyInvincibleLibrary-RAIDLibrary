@@ -29,6 +29,9 @@ private:
     string actualParity;
 
     int parityDiskIndex;
+    int imagePart1DiskIndex;
+    int imagePart2DiskIndex;
+    int imagePart3DiskIndex;
 
 
 public:
@@ -36,6 +39,20 @@ public:
     RAIDController();
 
     ///Metodos
+    bool isAvailable(string name);
+    bool saveImage(Image *newImage);
+
+    bool binaryDataToBMP();
+    string BMPtoBinaryData();
+
+
+    void toBmp();
+
+    void split();
+
+    int getActualImageFileLength();
+
+
     string decimalToBinary(int d);
     int binaryToDecimal(string b);
 

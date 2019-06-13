@@ -7,3 +7,8 @@ add_executable(MyInvincibleLibrary-RAIDLibrary main.cpp
         Disk.cpp Disk.h Galeria.cpp Galeria.h
         Image.cpp Image.h List.cpp List.h Node.cpp Node.h
         RAIDController.cpp RAIDController.h)
+
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(JSON-C json-c)
+link_libraries(${JSON-C_LIBRARIES})
+target_link_libraries(MyInvincibleLibrary-RAIDLibrary ${JSON-C_LIBRARIES})
