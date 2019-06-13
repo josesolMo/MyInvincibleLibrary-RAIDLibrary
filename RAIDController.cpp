@@ -25,10 +25,6 @@
  * @param _raidLibrary
  */
 RAIDController::RAIDController() {
-    disk0 = new Disk(0);
-    disk1 = new Disk(1);
-    disk2 = new Disk(2);
-    disk3 = new Disk(3);
 
     actualImage = nullptr;
 
@@ -67,17 +63,35 @@ bool RAIDController::saveImage(Image *newImage) {
     ///Guarda la instancia de la nueva imagen como la imagen actual en el Controller.
     setActualImage(newImage);
 
+    cout << 1 << endl;
+
     ///Convierte el BinaryData de la imagen y la guarda temporalmente.
     binaryDataToBMP();
+
+    cout << 2 << endl;
 
     ///Divide la imagen en tres y las guarda en diferentes discos.
     split();
 
+    cout << 3 << endl;
+
+    ///Pasa de .bmp a su BinaryData para ser
+    brokenBinary();
+
+    cout << 4 << endl;
+
+    ///Calcular el bit de paridad con XOR
+    XORParity();
+
+    cout << 5 << endl;
+
     ///Recalcula el siguiente disco en guardar la paridad.
-    nextParityDiskIndex();
+    //nextParityDiskIndex();
+
+    cout << 6 << endl;
 
 
-    return false;
+    return true;
 
 }
 
@@ -183,8 +197,6 @@ void RAIDController::split() {
     FILE* newFile2 = fopen(newFileName2.c_str(),"a");
     FILE* newFile3 = fopen(newFileName3.c_str(),"a");
 
-    ///Tamaño del header
-    int headerLength = 54;
     ///Tamaño del commonData
     int commonDataLength = 138;
 
@@ -293,6 +305,7 @@ void RAIDController::split() {
 
 /**
  * Muestra el tamaño del archivo (cantidad de bytes)
+ * @return int
  */
 int RAIDController::getActualImageFileLength() {
 
@@ -327,14 +340,11 @@ int RAIDController::getActualImageFileLength() {
 
 
 
-
-
-
 /**
  * Hace una lectura de los bytes de la imagen .bmp y guarda cada uno, en binario.
  * @return bitString
  */
-string RAIDController::BMPtoBinaryData() {
+string RAIDController::BMPtoBinaryData(string disk, string num) {
 
     string name = actualImage->getNombre();
 
@@ -345,8 +355,17 @@ string RAIDController::BMPtoBinaryData() {
     int byteValue;
     int index = 0;
 
+    string directory;
+
+    if (disk == "-1") {
+        directory = "/home/ruben/Desktop/Proyectos Git/MyInvincibleLibrary-RAIDLibrary/TemporalImageContainer/fB_" + name + ".bmp";
+    } else {
+        directory = "/home/ruben/Desktop/Proyectos Git/MyInvincibleLibrary-RAIDLibrary/DisksContainer/Disk" + disk + "/new" + num + name + ".bmp";
+    }
+
+    cout << "Directory: \n" << directory << endl;
+
     ///Para abrir la imagen
-    string directory = "/home/ruben/Desktop/Proyectos Git/MyInvincibleLibrary-RAIDLibrary/TemporalImageContainer/fromBinary_" + name + ".bmp";
     FILE *file;
     file = fopen(directory.c_str(), "rb");
 
@@ -391,6 +410,7 @@ string RAIDController::BMPtoBinaryData() {
  */
 void RAIDController::nextParityDiskIndex() {
 
+    ///Calculo del parityDiskIndex
     if (parityDiskIndex == 3) {
         parityDiskIndex = 0;
     } else if (parityDiskIndex >= 0) {
@@ -399,28 +419,31 @@ void RAIDController::nextParityDiskIndex() {
         cout << "ParityDiskIndex out of bounds: " << parityDiskIndex << endl;
     }
 
+    ///Calculo del imagePart1DiskIndex
     if (imagePart1DiskIndex == 3) {
         imagePart1DiskIndex = 0;
     } else if (imagePart1DiskIndex >= 0) {
         imagePart1DiskIndex++;
     } else {
-        cout << "ParityDiskIndex out of bounds: " << imagePart1DiskIndex << endl;
+        cout << "imagePart1DiskIndex out of bounds: " << imagePart1DiskIndex << endl;
     }
 
+    ///Calculo del imagePart2DiskIndex
     if (imagePart2DiskIndex == 3) {
         imagePart2DiskIndex = 0;
     } else if (imagePart2DiskIndex >= 0) {
         imagePart2DiskIndex++;
     } else {
-        cout << "ParityDiskIndex out of bounds: " << imagePart2DiskIndex << endl;
+        cout << "imagePart2DiskIndex out of bounds: " << imagePart2DiskIndex << endl;
     }
 
+    ///Calculo del imagePart3DiskIndex
     if (imagePart3DiskIndex == 3) {
         imagePart3DiskIndex = 0;
     } else if (imagePart3DiskIndex >= 0) {
         imagePart3DiskIndex++;
     } else {
-        cout << "ParityDiskIndex out of bounds: " << imagePart3DiskIndex << endl;
+        cout << "imagePart3DiskIndex out of bounds: " << imagePart3DiskIndex << endl;
     }
 
 }
@@ -485,73 +508,94 @@ int RAIDController::binaryToDecimal(string b) {
 
 }
 
+/**
+ * Tomara la imagen dividida y guardada por separado en discos para convertirse en binaryData cada una.
+ * Esto tiene el fin de poder calcular el bit de paridad que se guarda en el disco sobrante.
+ */
+void RAIDController::brokenBinary() {
+
+    actualSplit1 = BMPtoBinaryData(to_string(imagePart1DiskIndex),"1");
+    cout << "actualSplit1: " + actualSplit1;
+
+    actualSplit2 = BMPtoBinaryData(to_string(imagePart2DiskIndex),"2");
+    cout << "actualSplit2: " + actualSplit2;
+
+    actualSplit3 = BMPtoBinaryData(to_string(imagePart3DiskIndex),"3");
+    cout << "actualSplit3: " + actualSplit3;
+
+}
+
+/**
+ * Genera el bit de paridad de las imagenes para que exista redundancia en el RAID.
+ */
+void RAIDController::XORParity() {
+
+    ///BinaryData's temporales para calcular la paridad
+    string aS1 = actualSplit1;
+    string aS2 = actualSplit2;
+    string aS3 = actualSplit3;
+
+    ///String del nombre de la imagen
+    string name = actualImage->getNombre();
+
+    string directory = "/home/ruben/Desktop/Proyectos Git/MyInvincibleLibrary-RAIDLibrary/DisksContainer/Disk"
+                        + to_string(parityDiskIndex) + "/parity_" + name + ".txt";
+
+    ///Creacion en maquina de los archivos nuevos
+    FILE* parityFile = fopen(directory.c_str(),"a");
+
+    ///Variable donde guardar el resultado de la paridad actual
+    string actualResult;
+    int len = getActualImageFileLength();
+
+    string ar[len];
+
+
+    ///Se empiezan a recorrer los binaryData's de los splits
+    for (int i = 0; i < len; i++) {
+
+        if (aS1.substr(0, 1) == aS2.substr(0, 1)) {
+            actualResult = "0";
+            if (aS3.substr(0, 1) == "1") {
+                actualResult = "1";
+            }
+        } else {
+            actualResult = "1";
+            if (aS3.substr(0, 1) == "1") {
+                actualResult = "0";
+            }
+        }
+
+        //cout << aS1.substr(0, 1) << " + " << aS2.substr(0, 1) << " = " << actualResult << endl;
+
+        //cout << aS3.substr(0, 1) << " + " << actualResult;
+
+        /*
+        if (actualResult == aS3.substr(0, 1)) {
+            actualResult = "0";
+        } else {
+            actualResult = "1";
+        }*/
+
+        //cout << " = " << actualResult << endl;
+
+        ///Lo agrega al archivo
+        fputc(stoi(actualResult), parityFile);
+        //ar[i] = actualResult;
+
+        ///Borra el numero ya comparado de los binaryData's temporales
+        aS1.erase(0, 1);
+        aS2.erase(0, 1);
+        aS3.erase(0, 1);
+
+    }
+
+}
+
+
 
 ///Getters & Setters
 
-
-/**
- * Getter de disk0 de RAIDController.
- * @return disk
- */
-Disk *RAIDController::getDisk0() {
-    return disk0;
-}
-
-/**
- * Setter de disk0 de RAIDController.
- * @param _disk0
- */
-void RAIDController::setDisk0(Disk *_disk0) {
-    disk0 = _disk0;
-}
-
-/**
- * Getter de disk1 de RAIDController.
- * @return disk
- */
-Disk *RAIDController::getDisk1() {
-    return disk1;
-}
-
-/**
- * Setter de disk1 de RAIDController.
- * @param _disk1
- */
-void RAIDController::setDisk1(Disk *_disk1) {
-    disk1 = _disk1;
-}
-
-/**
- * Getter de disk2 de RAIDController.
- * @return disk
- */
-Disk *RAIDController::getDisk2() {
-    return disk2;
-}
-
-/**
- * Setter de disk2 de RAIDController.
- * @param _disk2
- */
-void RAIDController::setDisk2(Disk *_disk2) {
-    disk2 = _disk2;
-}
-
-/**
- * Getter de disk3 de RAIDController.
- * @return disk
- */
-Disk *RAIDController::getDisk3() {
-    return disk3;
-}
-
-/**
- * Setter de disk3 de RAIDController.
- * @param _disk3
- */
-void RAIDController::setDisk3(Disk *_disk3) {
-    disk3 = _disk3;
-}
 
 /**
  * Getter de actualImage de RAIDController.
@@ -648,3 +692,4 @@ int RAIDController::getParityDiskIndex() {
 void RAIDController::setParityDiskIndex(int _parityDiskIndex) {
     parityDiskIndex = _parityDiskIndex;
 }
+

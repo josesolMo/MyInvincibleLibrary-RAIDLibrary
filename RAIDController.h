@@ -16,10 +16,6 @@
 class RAIDController {
 
 private:
-    Disk* disk0;
-    Disk* disk1;
-    Disk* disk2;
-    Disk* disk3;
 
     Image* actualImage;
 
@@ -43,31 +39,22 @@ public:
     bool saveImage(Image *newImage);
 
     bool binaryDataToBMP();
-    string BMPtoBinaryData();
-
-
-    void toBmp();
 
     void split();
 
     int getActualImageFileLength();
 
-
     string decimalToBinary(int d);
     int binaryToDecimal(string b);
 
-    void splitImage(Image* image);
     void nextParityDiskIndex();
 
+    string BMPtoBinaryData(string disk, string num);
+
+    void brokenBinary();
+    void XORParity();
+
     ///Getters & Setters
-    Disk* getDisk0();
-    void setDisk0(Disk *_disk0);
-    Disk* getDisk1();
-    void setDisk1(Disk *_disk1);
-    Disk* getDisk2();
-    void setDisk2(Disk *_disk2);
-    Disk* getDisk3();
-    void setDisk3(Disk *_disk3);
 
     Image* getActualImage();
     void setActualImage(Image* _actualImage);

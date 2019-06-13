@@ -34,6 +34,10 @@ static RAIDController* raidController;
 static string binaryData;
 
 
+
+
+
+
 /**
  * Convierte un numero decimal a binario.
  * @param d
@@ -125,6 +129,17 @@ string BMPtoBinaryData(string directory) {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 string checkAvailability(string name, string binaryData) {
 
     bool isAvailable = raidController->isAvailable(name);
@@ -150,9 +165,8 @@ string checkAvailability(string name, string binaryData) {
 
     json_object *jobjAvailability = json_object_new_object();
     json_object *jstringAvailability = json_object_new_string(to_string(isAvailable).c_str()); /// "1" o "0"
-    json_object_object_add(jobjAvailability,"AVAILABILITY", jstringAvailability);
+    json_object_object_add(jobjAvailability,"NEWIMAGE", jstringAvailability);
     return json_object_to_json_string(jobjAvailability);
-
 
 }
 
@@ -231,12 +245,12 @@ int runServer() {
 
 
 
-            ///KEY: FILENAME
-            ///Obtiene el nombre del archivo por guardar u obtener.
-            struct json_object *tempFileName;
-            cout<<"FileName"<<endl;
-            json_object *parsed_jsonFileName = json_tokener_parse(buff);
-            json_object_object_get_ex(parsed_jsonFileName, "FILENAME", &tempFileName);
+            ///KEY: NEWIMAGE
+            ///Obtiene el nombre de la nueva imagen para verificar si puede ser guardada.
+            struct json_object *tempNewImage;
+            cout<<"NEWIMAGE"<<endl;
+            json_object *parsed_jsonNewImage = json_tokener_parse(buff);
+            json_object_object_get_ex(parsed_jsonNewImage, "NEWIMAGE", &tempNewImage);
 
             ///KEY: BINARYDATA
             ///Obtiene el binary data de una imagen completa para que sea guardada.
@@ -262,15 +276,15 @@ int runServer() {
 
 
 
-            ///Obtendra un request para guardar una imagen en el RAID
-            ///Verifica que reciba los KEYS: "FILENAME" & "BINARYDATA"
-            ///Envia keys: "AVAILABILITY"
-            if (json_object_get_string(tempFileName) != nullptr && json_object_get_string(tempBinaryData) != nullptr) {
+            ///Obtendra un request para obtener la disponibilidad de la nueva imagen.
+            ///Verifica que reciba los KEYS: NEWIMAGE & BINARYDATA
+            if (json_object_get_string(tempNewImage) != nullptr && json_object_get_string(tempBinaryData) != nullptr) {
                 ///JSON saliente del servidor
-                string confirmation = checkAvailability(json_object_get_string(tempFileName), json_object_get_string(tempBinaryData));
+                string newImage = checkAvailability(json_object_get_string(tempNewImage), json_object_get_string(tempBinaryData));
                 ///Envio al cliente
-                send(fd2, confirmation.c_str(), MAXDATASIZE, 0);
+                send(fd2, newImage.c_str(), MAXDATASIZE, 0);
             }
+
 
             /*
             ///Obtendra un request para obtener
@@ -309,32 +323,48 @@ int runServer() {
  */
 int main() {
 
-    cout << "MyInvincibleLibrary -> RAIDLibrary" << endl;
+    //cout << "MyInvincibleLibrary -> RAIDLibrary" << endl;
 
     raidController = new RAIDController();
 
     ///Corre el servidor
-    //runServer();
+    runServer();
 
 
 
     /////////////////////////////////////////////////////////////
     ///                         TESTS                         ///
     /////////////////////////////////////////////////////////////
+/*
 
 
-
-    ///Test Image Directory
-    string actualImageName = "coachella";
-    string actualDirectory = "/home/ruben/Desktop/Proyectos Git/MyInvincibleLibrary-RAIDLibrary/Media/" + actualImageName + ".bmp";
+    ///Test Image Directory 1
+    string actualImageName1 = "batman";
+    string actualDirectory1 = "/home/ruben/Desktop/Proyectos Git/MyInvincibleLibrary-RAIDLibrary/Media/" + actualImageName1 + ".bmp";
 
     ///Test Image BinaryData
-    string actualBinaryData = BMPtoBinaryData(actualDirectory);
+    string actualBinaryData1 = BMPtoBinaryData(actualDirectory1);
 
-    cout << actualBinaryData << endl;
+    cout << actualBinaryData1 << endl;
 
     ///Test del recibimiento del JSON
-    //checkAvailability(actualImageName, actualBinaryData);
+    checkAvailability(actualImageName1, actualBinaryData1);
 
+*/
+
+
+/*
+    ///Test Image Directory 2
+    string actualImageName2 = "game";
+    string actualDirectory2 = "/home/ruben/Desktop/Proyectos Git/MyInvincibleLibrary-RAIDLibrary/Media/" + actualImageName2 + ".bmp";
+
+    ///Test Image BinaryData
+    string actualBinaryData2 = BMPtoBinaryData(actualDirectory2);
+
+    cout << actualBinaryData2 << endl;
+
+    ///Test del recibimiento del JSON
+    checkAvailability(actualImageName2, actualBinaryData2);
+*/
 
 }
