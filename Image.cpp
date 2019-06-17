@@ -21,16 +21,69 @@ using namespace std;
  * @param _nombre
  */
 Image::Image(string _nombre) {
-    nombre = _nombre;
+    name = _nombre;
 }
 
-Image::Image(string _nombre, string _rawBinaryString) {
-    nombre = _nombre;
-    rawBinString = _rawBinaryString;
+/**
+ * Constructor de Imagen
+ * @param _nombre
+ * @param _rawHexadecimalString
+ */
+Image::Image(string _nombre, string _rawHexadecimalString) {
+    name = _nombre;
+    rawHexString = _rawHexadecimalString;
+    tempDirectory = "";
+    byteQuantity = 0;
 }
 
 
 ///Metodos
+
+
+/**
+ * Muestra el tamaño del archivo (cantidad de bytes)
+ */
+ /*
+int Image::getFileSizeFromDirectory() {
+
+    ///Para abrir la imagen
+    ifstream image( tempDirectory.c_str(), ios::binary | ios::in);
+
+    if (!image) {
+        cout << "Couldn't get " << name << "'s length." << endl;
+    }
+
+
+    //Para obtener el size del archivo
+    image.seekg(0,ifstream::end);
+    long size = image.tellg();
+    image.seekg(0);
+
+    cout << "\nFile Length in Image: " << size << endl;
+
+    image.close();
+
+    return size;
+
+}
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 /**
@@ -109,7 +162,7 @@ string Image::toBinary() {
     int index = 0;
 
     ///Para abrir la imagen
-    string directory = "./Media/" + nombre + ".bmp";
+    string directory = "./Media/" + name + ".bmp";
     FILE *file;
     file = fopen(directory.c_str(), "rb");
 
@@ -138,14 +191,14 @@ string Image::toBinary() {
     }
 
     ///Asigna el binaryData al atributo propio de la clase
-    rawBinString = binaryData;
+    rawHexString = binaryData;
 
     ///Length de binaryData
     int binLen = binaryData.length();
 
-    cout << "\nrawBinString: " << endl;
-    //cout << rawBinString << endl;
-    cout << "Length: " << rawBinString.length() << endl;
+    cout << "\nrawHexString: " << endl;
+    //cout << rawHexString << endl;
+    cout << "Length: " << rawHexString.length() << endl;
     cout << "Additional bytes: " << additionalBytes << "\n" << endl;
 
     ///Verifica que se pueda dividir exacto en tres discos, se suma 8 ya que siempre tendra el indicador
@@ -169,15 +222,6 @@ string Image::toBinary() {
     cout << "Additional bytes: " << additionalBytes << " -> '" << modBinString.substr (0,8) << "'\n" << endl;
 
     return binaryData;
-
-}
-
-/**
- * Modifica el binaryData proveniente de la conversion del cliente
- * @return
- */
-string Image::setBinaryDataForStorage() {
-
 
 }
 
@@ -213,10 +257,10 @@ void Image::toBmp() {
     cout << "Last w/o -> '" << binBmp.substr(binBmp.length()-24, 24) << "'\n" << endl;
 
     ///Verifica que su conversion sea igual al rawData guardado en su primera lectura
-    if (binBmp == rawBinString) {
+    if (binBmp == rawHexString) {
         cout << "Ready for recreating :)\n" << endl;
     } else {
-        cout << "rawBinString is not the same :(\n" << endl;
+        cout << "rawHexString is not the same :(\n" << endl;
     }//Image* tImage = new Image(actualImageName);
 
     ///Variales para la conversion
@@ -226,7 +270,7 @@ void Image::toBmp() {
     float totalByteLength = binBmp.length() / 8;
 
     ///Archivo nuevo por crear y escribir
-    string newFileName = "new" + nombre;
+    string newFileName = "new" + name;
     newFileName = newFileName  + ".bmp";
     FILE* newFile = fopen(newFileName.c_str(),"a");
 
@@ -296,9 +340,9 @@ void Image::split() {
     string image3disk = to_string(3);
 
     ///Creacion del nombre de los archivos nuevos
-    string newFileName1 = "/home/ruben/Desktop/Proyectos Git/MyInvincibleLibrary-RAIDLibrary/DisksContainer/Disk" + image1disk + "/new1" + nombre + ".bmp";
-    string newFileName2 = "/home/ruben/Desktop/Proyectos Git/MyInvincibleLibrary-RAIDLibrary/DisksContainer/Disk" + image2disk + "/new2" + nombre + ".bmp";
-    string newFileName3 = "/home/ruben/Desktop/Proyectos Git/MyInvincibleLibrary-RAIDLibrary/DisksContainer/Disk" + image2disk + "/new3" + nombre + ".bmp";
+    string newFileName1 = "/home/ruben/Desktop/Proyectos Git/MyInvincibleLibrary-RAIDLibrary/DisksContainer/Disk" + image1disk + "/new1" + name + ".bmp";
+    string newFileName2 = "/home/ruben/Desktop/Proyectos Git/MyInvincibleLibrary-RAIDLibrary/DisksContainer/Disk" + image2disk + "/new2" + name + ".bmp";
+    string newFileName3 = "/home/ruben/Desktop/Proyectos Git/MyInvincibleLibrary-RAIDLibrary/DisksContainer/Disk" + image2disk + "/new3" + name + ".bmp";
 
     ///Creacion en maquina de los archivos nuevos
     FILE* newFile1 = fopen(newFileName1.c_str(),"a");
@@ -311,7 +355,7 @@ void Image::split() {
     int commonDataLength = 138;
 
     ///Tamaño total de la imagen
-    int fileLength = getFileLength();
+    int fileLength = 0;//getFileSizeFromDirectory();
     ///Tamaño total de la imagen sin el CommonData (138)
     int fileLengthWOC = fileLength - commonDataLength;
 
@@ -326,7 +370,7 @@ void Image::split() {
     int index = 0;
 
     ///Para abrir la imagen original
-    string directory = "./Media/" + nombre + ".bmp";
+    string directory = "./Media/" + name + ".bmp";
     FILE *file;
     file = fopen(directory.c_str(), "rb");
 
@@ -409,20 +453,6 @@ void Image::split() {
 
 }
 
-/**
- * Hace el proceso de guardado de la imagen en los discos.
- * @return confirmation
- */
-bool Image::save() {
-
-    toBmp();
-    split();
-    //parity();
-
-    return true;
-
-}
-
 
 /**
  * Llama a los metodos para probar la imagen
@@ -431,7 +461,7 @@ void Image::testImage() {
 
     printBytes();
     getHeader();
-    getFileLength();
+    //getFileSizeFromDirectory();
     recreateFile();
 
 }
@@ -446,7 +476,7 @@ void Image::getHeader() {
     int index = 0;
 
     ///Para abrir la imagen
-    string directory = "./Media/" + nombre + ".bmp";
+    string directory = "./Media/" + name + ".bmp";
     FILE *file;
     file = fopen(directory.c_str(), "rb");
 
@@ -492,7 +522,7 @@ void Image::printBytes() {
     int index = 0;
 
     ///Para abrir la imagen
-    string directory = "./Media/" + nombre + ".bmp";
+    string directory = "./Media/" + name + ".bmp";
     FILE *file;
     file = fopen(directory.c_str(), "rb");
 
@@ -522,34 +552,7 @@ void Image::printBytes() {
 
 }
 
-/**
- * Muestra el tamaño del archivo (cantidad de bytes)
- */
-int Image::getFileLength() {
 
-    ///Para abrir la imagen
-    string directory = "./Media/" + nombre + ".bmp";
-    ifstream image( directory.c_str(), ios::binary | ios::in);
-
-    if (!image) {
-        cout << "Could not open." << endl;
-    } else {
-        //cout << "Success." << endl;
-    }
-
-
-    // get size of file
-    image.seekg(0,ifstream::end);
-    long size = image.tellg();
-    image.seekg(0);
-
-    cout << "\nFile Length: " << size << endl;
-
-    image.close();
-
-    return size;
-
-}
 
 /**
  * Crea un nuevo archivo .bmp a partir del archivo existente inmediatamente
@@ -567,7 +570,7 @@ void Image::recreateFile() {
     FILE* newFile = fopen(newFileName.c_str(),"a");
 
     ///Para abrir la imagen
-    string directory = "./Media/" + nombre + ".bmp";
+    string directory = "./Media/" + name + ".bmp";
     FILE *file;
     file = fopen(directory.c_str(), "rb");
 
@@ -604,7 +607,7 @@ void Image::recreateFile() {
  * @return nombre
  */
 string Image::getNombre() {
-    return nombre;
+    return name;
 }
 
 /**
@@ -612,29 +615,53 @@ string Image::getNombre() {
  * @param _nombre
  */
 void Image::setNombre(string _nombre) {
-    nombre = _nombre;
+    name = _nombre;
 }
 
 /**
  * Getter de rawBinString de Image.
  * @return string
  */
-string Image::getRawBinString() {
-    return rawBinString;
+string Image::getRawHexString() {
+    return rawHexString;
 }
 
 /**
  * Setter de rawBinString de Image.
- * @param _rawBinString
+ * @param _rawHexString
  */
-void Image::setRawBinString(string _rawBinString) {
-    rawBinString = _rawBinString;
+void Image::setRawHexString(string _rawHexString) {
+    rawHexString = _rawHexString;
 }
 
+/**
+ * Getter de tempDirectory de Image.
+ * @return string
+ */
+string Image::getTempDirectory() {
+    return tempDirectory;
+}
 
+/**
+ * Setter de tempDirectory de Image.
+ * @param _tempDirectory
+ */
+void Image::setTempDirectory(string _tempDirectory) {
+    tempDirectory = _tempDirectory;
+}
 
+/**
+ * Getter de byteQuantity de Image.
+ * @return int
+ */
+int Image::getByteQuantity() {
+    return byteQuantity;
+}
 
-
-
-
-
+/**
+ * Setter de byteQuantity de Image.
+ * @param _byteQuantity
+ */
+void Image::setByteQuantity(int _byteQuantity) {
+    byteQuantity = _byteQuantity;
+}

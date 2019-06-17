@@ -19,6 +19,9 @@ private:
 
     Image* actualImage;
 
+    string TICDirectory;
+    string DCDirectory;
+
     string actualSplit1;
     string actualSplit2;
     string actualSplit3;
@@ -35,24 +38,41 @@ public:
     RAIDController();
 
     ///Metodos
-    bool isAvailable(string name);
+
+    bool write(Image *newImage);
+    bool hexDataToBMP(string name, string hexData);
+    int hexToDecimal(string h);
+    bool split();
+    int getActualImageFileLength();
+    string BMPtoBinaryData(string disk, string num);
+    bool brokenBinary();
+    bool XORParity();
+
+
+
+    void verifyParity();
+
+
+
+    int getActualImageFileLength(string name);
+
+
+
+
     bool saveImage(Image *newImage);
 
     bool binaryDataToBMP();
-
-    void split();
-
-    int getActualImageFileLength();
 
     string decimalToBinary(int d);
     int binaryToDecimal(string b);
 
     void nextParityDiskIndex();
 
-    string BMPtoBinaryData(string disk, string num);
 
-    void brokenBinary();
-    void XORParity();
+
+
+
+    bool split(string name, int fileSize);
 
     ///Getters & Setters
 

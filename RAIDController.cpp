@@ -28,6 +28,10 @@ RAIDController::RAIDController() {
 
     actualImage = nullptr;
 
+    TICDirectory = "/home/ruben/Desktop/Proyectos Git/MyInvincibleLibrary-RAIDLibrary/TemporalImageContainer/";
+    DCDirectory = "/home/ruben/Desktop/Proyectos Git/MyInvincibleLibrary-RAIDLibrary/DisksContainer/";
+
+
     actualSplit1 = "";
     actualSplit2 = "";
     actualSplit3 = "";
@@ -45,17 +49,588 @@ RAIDController::RAIDController() {
 
 
 /**
- * Busca en los archivos si existe alguno con el mismo nombre.
- * @param name
+ * Guarda la imagen en los discos (RAID)
+ * @return true, si es agregada
+ */
+bool RAIDController::write(Image *newImage) {
+
+    ///Flag
+    bool isWritten = true;
+
+    ///Guarda la instancia de la nueva imagen como la imagen actual en el Controller.
+    setActualImage(newImage);
+
+    while (isWritten) {
+
+        ///Convierte el hexData de la imagen y la guarda temporalmente en .
+        isWritten = hexDataToBMP(actualImage->getNombre(), actualImage->getRawHexString());
+        if (!isWritten) {
+            break;
+        }
+
+        ///Divide la imagen en tres y las guarda en diferentes discos.
+        isWritten = split();
+        if (!isWritten) {
+            break;
+        }
+
+        ///Pasa de .bmp a su BinaryData para calcular su paridad luego.
+        isWritten = brokenBinary();
+        if (!isWritten) {
+            break;
+        }
+
+        ///Calcula el bit de paridad con XOR entre los BinaryData de las imagenes divididas.
+        isWritten = XORParity();
+        if (!isWritten) {
+            break;
+        }
+
+        ///Calcula el siguiente disco por guardar la paridad
+        nextParityDiskIndex();
+
+
+        break;
+    }
+
+    ///Se reestablecen las variables luego de su uso
+    actualImage = nullptr;
+    actualSplit1 = "";
+    actualSplit2 = "";
+    actualSplit3 = "";
+    actualParity = "";
+
+    return isWritten;
+}
+
+
+/**
+ * Toma el hexData de la imagen y la convierte a .bmp.
+ * Es guardada en el folder "TemporalImageContainer".
  * @return bool
  */
-bool RAIDController::isAvailable(string name) {
+bool RAIDController::hexDataToBMP(string name, string hexData) {
 
-    ///Buscar en archivos si existe una imagen con ese nombre
+    ///Variables para la conversion
+    int byteValue;
+    int index = 0;
+    string actualByte;
+    float totalByteLength = hexData.length() / 2;
+
+    actualImage->setByteQuantity(totalByteLength);
+
+    cout << "totalByteLength: " << totalByteLength << endl;
+
+    ///Archivo nuevo por crear y escribir
+    string newFileName = TICDirectory + "fH_" + name;
+    FILE* newFile = fopen(newFileName.c_str(),"a");
+
+    ///Guarda el archivo donde se encuentra temporalmente luego de haber sido reconstruida
+    ///al provenir del cliente.
+    actualImage->setTempDirectory(newFileName);
+
+    ///Recorrera el binString hasta que desaparezca
+    while (hexData.length() > 0) {
+
+        if (true) {
+
+            if (hexData.length() == 8) {
+
+                ///Elimina los ultimos bits del bitString
+                hexData.erase(0, 2);
+
+                ///Ingresa EOF al final del nuevo archivo
+                fputc(EOF, newFile);
+
+                //cout << index << ": " << EOF << endl;
+
+            } else {
+
+                ///Lectura del bitString
+
+                ///Toma los primeros 8 bits del bitString
+                actualByte = hexData.substr(0, 2);
+
+                ///Elimina esos bits del bitString
+                hexData.erase(0, 2);
+
+                ///Convierte el byte (2 bits) a decimal
+                byteValue = hexToDecimal(actualByte);
+
+                ///Escribe el valor al nuevo archivo
+                fputc(byteValue, newFile);
+
+                //cout << index << ": " << byteValue << endl;
+
+            }
+
+        }
+
+        index++;
+
+        ///Muestra el porcentaje completado de la conversion
+        if (index % 1000 == 0) {
+
+            float percentageOfCompletition = index/(totalByteLength) * 100;
+            cout << "Recreation Completed: " << fixed << setprecision(2) << percentageOfCompletition << " %" << endl;
+
+        }
+
+    }
+
+    cout << "Recreation Completed: " << 100.00 << "%" << endl;
+    cout << "\nRecreation complete: " + newFileName + " created.\n" << endl;
+
+    //fclose(newFile);
+
+    return true;
+}
+
+
+/**
+ * Convierte un numero hexadecimal a decimal.
+ * @param h
+ * @return d
+ */
+int RAIDController::hexToDecimal(string h) {
+
+    unsigned int d;
+
+    h = "0x" + h;
+
+    stringstream ss;
+    ss << std::hex << h;
+    ss >> d;
+
+    return d;
+}
+
+
+/**
+ * Parte la imagen en tres pedazos, en tres archivos diferentes.
+ */
+bool RAIDController::split() {
+
+    string name = actualImage->getNombre();
+
+    ///Se obtiene el disco en el cual se guardara cada parte
+    string parityDisk = to_string(parityDiskIndex);
+    string image1disk = to_string(imagePart1DiskIndex);
+    string image2disk = to_string(imagePart2DiskIndex);
+    string image3disk = to_string(imagePart3DiskIndex);
+
+    ///Creacion del nombre de los archivos nuevos que separaran la imagen
+    string image_1of3 = DCDirectory + "Disk" + image1disk + "/1_" + name;
+    string image_2of3 = DCDirectory + "Disk" + image2disk + "/2_" + name;
+    string image_3of3 = DCDirectory + "Disk" + image3disk + "/3_" + name;
+
+    ///Creacion en folder "Disks Container/DiskN" los archivos nuevos
+    FILE* file_1of3 = fopen(image_1of3.c_str(),"a");
+    FILE* file_2of3 = fopen(image_2of3.c_str(),"a");
+    FILE* file_3of3 = fopen(image_3of3.c_str(),"a");
+
+    ///Tamaño del commonData
+    int commonDataLength = 138;
+
+    ///Tamaño total de la imagen
+    int fileLength = getActualImageFileLength();
+    ///Tamaño total de la imagen sin el CommonData (138)
+    int fileLengthWOC = fileLength - commonDataLength;
+
+    cout << "fileLengthWOC: " << fileLengthWOC << endl;
+
+    ///Arrays para guardar la informacion de la imagen
+    int commonDataTotal[commonDataLength];
+    int pixelDataTotal[fileLengthWOC];
+
+    ///Variables para el recorrido
+    int byteValue;
+    int index = 0;
+
+    ///Para abrir la imagen original
+    string directory = TICDirectory + "fH_" + name;
+    FILE *tempFile;
+    tempFile = fopen(directory.c_str(), "rb");
+
+    ///Recorrido para obtener el commonData y el PixelData
+    if (tempFile != nullptr) {
+        while (byteValue != EOF) {
+            byteValue = fgetc(tempFile);
+
+            ///Para guardar el CommonData
+            if (index < 138) {
+                commonDataTotal[index] = byteValue;
+            }
+            ///Para guardar el PixelData
+            else {
+                pixelDataTotal[index - commonDataLength] = byteValue;
+                //cout << "pixelDataTotal: " << index - commonDataLength << " -> " << pixelDataTotal[index - commonDataLength] << endl;
+            }
+
+            ///Incrementa el indice
+            index++;
+        }
+
+        ///Cierra el file al terminar de leer
+        fclose(tempFile);
+
+    } else {
+
+        printf("\nFile not found.");
+        return false;
+
+    }
+
+    ///Escribira el commonData de la imagen original en las tres divisiones
+    for (int i = 0; i < 138; i++) {
+
+        ///Escritura al nuevo archivo
+        fputc(commonDataTotal[i], file_1of3);
+        fputc(commonDataTotal[i], file_2of3);
+        fputc(commonDataTotal[i], file_3of3);
+
+        //cout << i << "-> " << "1: " << commonDataTotal[i] << " 2: " << commonDataTotal[i] << " 3: " << commonDataTotal[i] << endl;
+
+    }
+
+    ///Calculara una aproximacion cercana a una igualdad en la particion de pixeles de las nuevas imagenes
+    if ( (fileLength % 3) == 1) {
+        fileLength += 2;
+    } else if ( (fileLength % 3) == 2) {
+        fileLength += 1;
+    }
+
+    cout << "fileLength: " << fileLength << ".   %3: " << (fileLength % 3) << endl;
+
+    ///Size solo del tercio de la imagen
+    int aFileThird = fileLength / 3;
+
+    cout << "aFileThird: " << aFileThird << endl;
+
+
+    for (int i = 0; i < fileLength; i++) {
+
+        ///Para la primera imagen: La parte central y de mas abajo seran blancas.
+        if (i < aFileThird) {
+
+            fputc(pixelDataTotal[i], file_1of3);
+            fputc(255, file_2of3);
+            fputc(255, file_3of3);
+
+        }
+        ///Para la segunda imagen: La parte de mas arriba y de mas abajo seran blancas.
+        else if (i < aFileThird*2) {
+
+            fputc(255, file_1of3);
+            fputc(pixelDataTotal[i], file_2of3);
+            fputc(255, file_3of3);
+
+        }
+        ///Para la tercera imagen: La parte de mas arriba y central seran blancas.
+        else {
+
+            fputc(255, file_1of3);
+            fputc(255, file_2of3);
+            fputc(pixelDataTotal[i], file_3of3);
+
+            //cout << i << "-> " << "1: " << 255 << " 2: " << 255 << " 3: " << pixelDataTotal[i] << endl;
+
+        }
+
+    }
+
+    //fclose(file_1of3);
+    //fclose(file_2of3);
+    //fclose(file_3of3);
+
+    return true;
+}
+
+
+/**
+ * Muestra el tamaño del archivo (cantidad de bytes)
+ * @return int
+ */
+int RAIDController::getActualImageFileLength() {
+
+    ///Nombre del archivo
+    string name = actualImage->getNombre();
+
+    ///Para abrir la imagen
+    string directory = TICDirectory + "fH_" + name;
+    ifstream image( directory.c_str(), ios::binary | ios::in);
+
+    if (!image) {
+        cout << "Could not open. (getActualImageFileLength)" << endl;
+    } else {
+        //cout << "Success." << endl;
+    }
+
+
+    ///Toma el tama;o del archivo
+    image.seekg(0,ifstream::end);
+    long size = image.tellg();
+    image.seekg(0);
+
+    cout << "\nFile Length: " << size << endl;
+
+    image.close();
+
+    return size;
+
+}
+
+
+/**
+ * Tomara la imagen dividida y guardada por separado en discos para convertirse en binaryData cada una.
+ * Esto tiene el fin de poder calcular el bit de paridad que se guarda en el disco sobrante.
+ */
+bool RAIDController::brokenBinary() {
+
+    actualSplit1 = BMPtoBinaryData(to_string(imagePart1DiskIndex),"1");
+    //cout << "actualSplit1: " + actualSplit1 << endl;
+
+    actualSplit2 = BMPtoBinaryData(to_string(imagePart2DiskIndex),"2");
+    //cout << "actualSplit2: " + actualSplit2 << endl;
+
+    actualSplit3 = BMPtoBinaryData(to_string(imagePart3DiskIndex),"3");
+    //cout << "actualSplit3: " + actualSplit3 << endl;
 
     return true;
 
 }
+
+
+/**
+ * Hace una lectura de los bytes de la imagen .bmp y guarda cada uno, en binario.
+ * @return bitString
+ */
+string RAIDController::BMPtoBinaryData(string disk, string num) {
+
+    ///Nombre de la imagen
+    string name = actualImage->getNombre();
+
+    ///Contenedor del BinaryData
+    string binaryData;
+
+    ///Variables para el recorrido
+    int byteValue;
+    int index = 0;
+
+    string directory;
+
+    if (disk == "-1") {
+        directory = TICDirectory + "fB_" + name;
+    } else {
+        name = num + "_" + name;
+        directory = DCDirectory + "Disk" + disk + "/" + name;
+    }
+
+    cout << "\n\nDirectory: " << directory << endl;
+
+    ///Para abrir la imagen
+    FILE *file;
+    file = fopen(directory.c_str(), "rb");
+
+
+    if (file != NULL) {
+
+        while (byteValue != EOF) {
+            if (index >= 0) {
+
+                ///Value obtenido de la imagen
+                byteValue = fgetc(file);
+                binaryData += decimalToBinary(byteValue);
+
+            }
+            index++;
+        }
+
+        fclose(file);
+
+    } else {
+
+        printf("\nFile not found.");
+
+        return "";
+
+    }
+
+    // ///Asigna el binaryData al atributo propio de la clase
+    //actualImage->setRawHexString(binaryData);
+
+    cout << "rawBinString(" << name << "): " << endl;
+    //cout << "Length: " << actualImage->getRawHexString().length() << endl;
+
+    return binaryData;
+
+}
+
+
+/**
+ * Genera el bit de paridad de las imagenes para que exista redundancia en el RAID.
+ */
+bool RAIDController::XORParity() {
+
+    ///BinaryData's temporales para calcular la paridad
+    string aS1 = actualSplit1;
+    string aS2 = actualSplit2;
+    string aS3 = actualSplit3;
+
+    ///String del nombre de la imagen
+    string name = actualImage->getNombre();
+
+    string temporalDirectory = TICDirectory + "fH_" + name;
+
+    ///Toma solo el nombre, sin ".bmp"
+    name.resize( name.size() - 4 ) ;
+
+    string savingDirectory = DCDirectory + "Disk" + to_string(parityDiskIndex) + "/parity_" + name + ".txt";
+
+    ///Creacion en maquina de los archivos nuevos
+    FILE* parityFile = fopen(savingDirectory.c_str(),"a");
+
+    ///Variable donde guardar el resultado de la paridad actual
+    string actualResult;
+    int len = actualSplit1.length();
+
+    //cout << "len: " << len << endl;
+
+    ///Se empiezan a recorrer los binaryData's de los splits
+    for (int i = 0; i < len; i++) {
+
+        ///Compara inicialmente las primeras dos imagenes
+        if (aS1.substr(0, 1) == aS2.substr(0, 1)) {
+            actualResult = "0";
+        } else {
+            actualResult = "1";
+        }
+
+        //cout << "a: " << aS1.substr(0, 1) << " + " << aS2.substr(0, 1) << " = " << actualResult << endl;
+
+        //cout << "c: " << aS3.substr(0, 1) << " + " << actualResult;
+
+        ///Compara el resultado de la comparacion anterior con la tercera imagen
+        if (actualResult == aS3.substr(0, 1)) {
+            actualResult = "0";
+        } else {
+            actualResult = "1";
+        }
+
+        //cout << " = " << actualResult << endl;
+
+        ///Lo agrega al archivo
+        fputc(stoi(actualResult), parityFile);
+
+        ///Se agrega a la variable
+        actualParity += actualResult;
+
+        ///Borra el numero ya comparado de los binaryData's temporales
+        aS1.erase(0, 1);
+        aS2.erase(0, 1);
+        aS3.erase(0, 1);
+
+
+        ///Muestra el porcentaje completado de la conversion
+        if (i % 1000 == 0) {
+
+            //cout << (i*100)/ len << endl;
+
+            float percentageOfCompletition = (i*100)/ len;
+            cout << "Parity Completed: " << fixed << setprecision(2) << percentageOfCompletition << " %" << endl;
+
+        }
+
+
+    }
+
+    cout << "Parity Completed: " << 100.00 << "%" << endl;
+    cout << "\nXOR: " + savingDirectory + " created.\n" << endl;
+
+    ///Cierra el archivo abierto
+    fclose(parityFile);
+
+    ///Elimina la imagen entera ya que esta no se necesita en el RAID
+    remove(temporalDirectory.c_str());
+
+    ///Tests de la paridad
+    verifyParity();
+
+    return true;
+}
+
+
+
+
+
+
+
+
+
+void RAIDController::verifyParity() {
+
+    ///Variables para el recorrido
+    int byteValue;
+    int index = 0;
+
+
+
+    ///String del nombre de la imagen
+    string name = actualImage->getNombre();
+
+    ///Toma solo el nombre, sin ".bmp"
+    name.resize( name.size() - 4 ) ;
+
+    string savedDirectory = DCDirectory + "Disk" + to_string(parityDiskIndex) + "/parity_" + name + ".txt";
+
+
+
+    ///Para abrir la imagen original
+    FILE *tempFile;
+    tempFile = fopen(savedDirectory.c_str(), "rb");
+
+    ///Recorrido para obtener el commonData y el PixelData
+    if (tempFile != nullptr) {
+        while (byteValue != EOF) {
+            byteValue = fgetc(tempFile);
+
+            //cout << "byteValue: " << byteValue << endl;
+
+            ///Incrementa el indice
+            index++;
+        }
+
+        ///Cierra el file al terminar de leer
+        fclose(tempFile);
+
+    } else {
+
+        printf("\nFile not found.");
+
+    }
+
+    cout << actualSplit1 << "\n" << endl;
+    cout << actualSplit2 << "\n" << endl;
+    cout << actualSplit3 << "\n" << endl;
+    cout << actualParity << "\n" << endl;
+
+    cout << actualSplit1.length() << "\n" << endl;
+    cout << actualSplit2.length() << "\n" << endl;
+    cout << actualSplit3.length() << "\n" << endl;
+    cout << actualParity.length() << "\n" << endl;
+
+
+}
+
+
+
+
+
+
+
+
+
+
 
 
 bool RAIDController::saveImage(Image *newImage) {
@@ -95,6 +670,34 @@ bool RAIDController::saveImage(Image *newImage) {
 
 }
 
+/**
+ * Muestra el tamaño del archivo (cantidad de bytes)
+ * @return int
+ */
+int RAIDController::getActualImageFileLength(string name) {
+
+    ///Para abrir la imagen
+    string directory = TICDirectory + "fH_" + name;
+    ifstream image( directory.c_str(), ios::binary | ios::in);
+
+    if (!image) {
+        cout << "Couldn't get ActualImageLength." << endl;
+    }
+
+    ///Toma el tamaño del archivo
+    image.seekg(0,ifstream::end);
+    long size = image.tellg();
+    image.seekg(0);
+
+    //cout << "\nFile Length: " << size << endl;
+
+    image.close();
+
+    return size;
+
+}
+
+
 
 /**
  * Toma el BinaryData de la imagen y la convierte a .bmp.
@@ -107,7 +710,7 @@ bool RAIDController::binaryDataToBMP() {
     string name = actualImage->getNombre();
 
     ///BinaryData de la imagen actual
-    string binaryData = actualImage->getRawBinString();
+    string binaryData = actualImage->getRawHexString();
 
     ///Variables para la conversion
     int byteValue;
@@ -116,7 +719,7 @@ bool RAIDController::binaryDataToBMP() {
     float totalByteLength = binaryData.length() / 8;
 
     ///Archivo nuevo por crear y escribir
-    string newFileName = "/home/ruben/Desktop/Proyectos Git/MyInvincibleLibrary-RAIDLibrary/TemporalImageContainer/fB_" + name + ".bmp";
+    string newFileName = TICDirectory + "fB_" + name + ".bmp";
     FILE* newFile = fopen(newFileName.c_str(),"a");
 
     ///Recorrera el binString hasta que desaparezca
@@ -132,7 +735,7 @@ bool RAIDController::binaryDataToBMP() {
                 ///Ingresa EOF al final del nuevo archivo
                 fputc(EOF, newFile);
 
-                //cout << index << ": " << EOF << endl;
+                cout << index << ": " << EOF << endl;
 
             } else {
 
@@ -150,7 +753,7 @@ bool RAIDController::binaryDataToBMP() {
                 ///Escribe el valor al nuevo archivo
                 fputc(byteValue, newFile);
 
-                //cout << index << ": " << byteValue << endl;
+                cout << index << ": " << byteValue << endl;
 
             }
 
@@ -173,235 +776,6 @@ bool RAIDController::binaryDataToBMP() {
 
 }
 
-
-
-/**
- * Parte la imagen en tres pedazos, en tres archivos diferentes.
- */
-void RAIDController::split() {
-
-    string name = actualImage->getNombre();
-
-    string parityDisk = to_string(parityDiskIndex);
-    string image1disk = to_string(imagePart1DiskIndex);
-    string image2disk = to_string(imagePart2DiskIndex);
-    string image3disk = to_string(imagePart3DiskIndex);
-
-    ///Creacion del nombre de los archivos nuevos
-    string newFileName1 = "/home/ruben/Desktop/Proyectos Git/MyInvincibleLibrary-RAIDLibrary/DisksContainer/Disk" + image1disk + "/new1" + name + ".bmp";
-    string newFileName2 = "/home/ruben/Desktop/Proyectos Git/MyInvincibleLibrary-RAIDLibrary/DisksContainer/Disk" + image2disk + "/new2" + name + ".bmp";
-    string newFileName3 = "/home/ruben/Desktop/Proyectos Git/MyInvincibleLibrary-RAIDLibrary/DisksContainer/Disk" + image3disk + "/new3" + name + ".bmp";
-
-    ///Creacion en maquina de los archivos nuevos
-    FILE* newFile1 = fopen(newFileName1.c_str(),"a");
-    FILE* newFile2 = fopen(newFileName2.c_str(),"a");
-    FILE* newFile3 = fopen(newFileName3.c_str(),"a");
-
-    ///Tamaño del commonData
-    int commonDataLength = 138;
-
-    ///Tamaño total de la imagen
-    int fileLength = getActualImageFileLength();
-    ///Tamaño total de la imagen sin el CommonData (138)
-    int fileLengthWOC = fileLength - commonDataLength;
-
-    cout << "fileLengthWOC: " << fileLengthWOC << endl;
-
-    ///Arrays para guardar la informacion de la imagen
-    int commonDataTotal[commonDataLength];
-    int pixelDataTotal[fileLengthWOC];
-
-    ///Variables para el recorrido
-    int byteValue;
-    int index = 0;
-
-    ///Para abrir la imagen original
-    string directory = "/home/ruben/Desktop/Proyectos Git/MyInvincibleLibrary-RAIDLibrary/TemporalImageContainer/fB_" + name + ".bmp";
-    FILE *file;
-    file = fopen(directory.c_str(), "rb");
-
-    ///Recorrido para obtener el commonData y el PixelData
-    if (file != nullptr) {
-        while (byteValue != EOF) {
-
-            if (index < 138) {
-                byteValue = fgetc(file);
-                commonDataTotal[index] = byteValue;
-            } else {
-                byteValue = fgetc(file);
-                pixelDataTotal[index - commonDataLength] = byteValue;
-                //cout << "pixelDataTotal: " << index - commonDataLength << " -> " << pixelDataTotal[index - commonDataLength] << endl;
-            }
-
-            ///Incrementa el indice
-            index++;
-        }
-
-        ///Cierra el file al terminar de leer
-        fclose(file);
-
-    } else {
-
-        printf("\nFile not found.");
-
-    }
-
-    ///Escribira el commonData de la imagen original en las tres divisiones
-    for (int i = 0; i < 138; i++) {
-
-        ///Escritura al nuevo archivo
-        fputc(commonDataTotal[i], newFile1);
-        fputc(commonDataTotal[i], newFile2);
-        fputc(commonDataTotal[i], newFile3);
-
-        cout << i << "-> " << "1: " << commonDataTotal[i] << " 2: " << commonDataTotal[i] << " 3: " << commonDataTotal[i] << endl;
-
-    }
-
-    ///Calculara una aproximacion cercana a una igualdad en la particion de pixeles de las nuevas imagenes
-    if ( (fileLength % 3) == 1) {
-        fileLength += 2;
-    } else if ( (fileLength % 3) == 2) {
-        fileLength += 1;
-    }
-
-    cout << "fileLength: " << fileLength << ".   %3: " << (fileLength % 3) << endl;
-
-    int third = fileLength / 3;
-
-    cout << third << " third: " << third;
-
-
-    for (int i = 0; i < fileLength; i++) {
-
-        if (i < third) {
-
-            fputc(pixelDataTotal[i], newFile1);
-            fputc(255, newFile2);
-            fputc(255, newFile3);
-
-        }
-        else if (i < third*2) {
-
-            fputc(255, newFile1);
-            fputc(pixelDataTotal[i], newFile2);
-            fputc(255, newFile3);
-
-        } else {
-
-            fputc(255, newFile1);
-            fputc(255, newFile2);
-            fputc(pixelDataTotal[i], newFile3);
-
-        }
-
-    }
-
-}
-
-
-
-
-
-/**
- * Muestra el tamaño del archivo (cantidad de bytes)
- * @return int
- */
-int RAIDController::getActualImageFileLength() {
-
-    ///Nombre del archivo
-    string name = actualImage->getNombre();
-
-    ///Para abrir la imagen
-    string directory = "/home/ruben/Desktop/Proyectos Git/MyInvincibleLibrary-RAIDLibrary/TemporalImageContainer/fB_" + name + ".bmp";
-    ifstream image( directory.c_str(), ios::binary | ios::in);
-
-    if (!image) {
-        cout << "Could not open." << endl;
-    } else {
-        //cout << "Success." << endl;
-    }
-
-
-    ///Toma el tama;o del archivo
-    image.seekg(0,ifstream::end);
-    long size = image.tellg();
-    image.seekg(0);
-
-    cout << "\nFile Length: " << size << endl;
-
-    image.close();
-
-    return size;
-
-}
-
-
-
-
-
-/**
- * Hace una lectura de los bytes de la imagen .bmp y guarda cada uno, en binario.
- * @return bitString
- */
-string RAIDController::BMPtoBinaryData(string disk, string num) {
-
-    string name = actualImage->getNombre();
-
-    ///Contenedor del BinaryData
-    string binaryData;
-
-    ///Variables para el recorrido
-    int byteValue;
-    int index = 0;
-
-    string directory;
-
-    if (disk == "-1") {
-        directory = "/home/ruben/Desktop/Proyectos Git/MyInvincibleLibrary-RAIDLibrary/TemporalImageContainer/fB_" + name + ".bmp";
-    } else {
-        directory = "/home/ruben/Desktop/Proyectos Git/MyInvincibleLibrary-RAIDLibrary/DisksContainer/Disk" + disk + "/new" + num + name + ".bmp";
-    }
-
-    cout << "Directory: \n" << directory << endl;
-
-    ///Para abrir la imagen
-    FILE *file;
-    file = fopen(directory.c_str(), "rb");
-
-
-    if (file != NULL) {
-
-        while (byteValue != EOF) {
-            if (index >= 0) {
-
-                ///Value obtenido de la imagen
-                byteValue = fgetc(file);
-                binaryData += decimalToBinary(byteValue);
-
-            }
-            index++;
-        }
-
-        fclose(file);
-
-    } else {
-
-        printf("\nFile not found.");
-
-        return "";
-
-    }
-
-    ///Asigna el binaryData al atributo propio de la clase
-    actualImage->setRawBinString(binaryData);
-
-    cout << "\nrawBinString: " << endl;
-    cout << "Length: " << actualImage->getRawBinString().length() << endl;
-
-    return binaryData;
-
-}
 
 
 /**
@@ -508,89 +882,172 @@ int RAIDController::binaryToDecimal(string b) {
 
 }
 
-/**
- * Tomara la imagen dividida y guardada por separado en discos para convertirse en binaryData cada una.
- * Esto tiene el fin de poder calcular el bit de paridad que se guarda en el disco sobrante.
- */
-void RAIDController::brokenBinary() {
 
-    actualSplit1 = BMPtoBinaryData(to_string(imagePart1DiskIndex),"1");
-    cout << "actualSplit1: " + actualSplit1;
 
-    actualSplit2 = BMPtoBinaryData(to_string(imagePart2DiskIndex),"2");
-    cout << "actualSplit2: " + actualSplit2;
 
-    actualSplit3 = BMPtoBinaryData(to_string(imagePart3DiskIndex),"3");
-    cout << "actualSplit3: " + actualSplit3;
 
-}
+
+
+
+
+
+
+
+
+
 
 /**
- * Genera el bit de paridad de las imagenes para que exista redundancia en el RAID.
+ * Parte la imagen en tres pedazos, en tres archivos diferentes.
  */
-void RAIDController::XORParity() {
+bool RAIDController::split(string name, int byteQuantity) {
 
-    ///BinaryData's temporales para calcular la paridad
-    string aS1 = actualSplit1;
-    string aS2 = actualSplit2;
-    string aS3 = actualSplit3;
+    ///Se obtiene el disco en el cual se guardara cada parte
+    string parityDisk = to_string(parityDiskIndex);
+    string image1disk = to_string(imagePart1DiskIndex);
+    string image2disk = to_string(imagePart2DiskIndex);
+    string image3disk = to_string(imagePart3DiskIndex);
 
-    ///String del nombre de la imagen
-    string name = actualImage->getNombre();
+    ///Creacion del nombre de los archivos nuevos que separaran la imagen
+    string image_1of3 = DCDirectory + "Disk" + image1disk + "/1_" + name;
+    string image_2of3 = DCDirectory + "Disk" + image2disk + "/2_" + name;
+    string image_3of3 = DCDirectory + "Disk" + image3disk + "/3_" + name;
 
-    string directory = "/home/ruben/Desktop/Proyectos Git/MyInvincibleLibrary-RAIDLibrary/DisksContainer/Disk"
-                        + to_string(parityDiskIndex) + "/parity_" + name + ".txt";
+    ///Creacion en folder "Disks Container/DiskN" los archivos nuevos
+    FILE* file_1of3 = fopen(image_1of3.c_str(),"a");
+    FILE* file_2of3 = fopen(image_2of3.c_str(),"a");
+    FILE* file_3of3 = fopen(image_3of3.c_str(),"a");
 
-    ///Creacion en maquina de los archivos nuevos
-    FILE* parityFile = fopen(directory.c_str(),"a");
+    ///Tamaño del commonData
+    int commonDataLength = 138;
 
-    ///Variable donde guardar el resultado de la paridad actual
-    string actualResult;
-    int len = getActualImageFileLength();
+    // ///Tamaño total de la imagen
+    //int fileLength = fileSize;
+    ///Tamaño total de la imagen sin el CommonData (138)
+    int byteQuantityWOC = byteQuantity - commonDataLength;
 
-    string ar[len];
+    cout << "byteQuantity: " << byteQuantity << endl;
 
 
-    ///Se empiezan a recorrer los binaryData's de los splits
-    for (int i = 0; i < len; i++) {
 
-        if (aS1.substr(0, 1) == aS2.substr(0, 1)) {
-            actualResult = "0";
-            if (aS3.substr(0, 1) == "1") {
-                actualResult = "1";
+    cout << "byteQuantityWOC: " << byteQuantityWOC << endl;
+
+    ///Arrays para guardar la informacion de la imagen
+    int commonDataTotal[commonDataLength];
+    int pixelDataTotal[byteQuantityWOC];
+
+    ///Variables para el recorrido
+    int byteValue;
+    int index = 0;
+
+    ///Para abrir la imagen original
+    string directory = TICDirectory + "fH_" + name;
+    FILE *tempFile;
+    tempFile = fopen(directory.c_str(), "rb");
+
+    ///Recorrido para obtener el commonData y el PixelData en sus propios arrays
+    if (tempFile != nullptr) {
+        while (byteValue != EOF) {
+            byteValue = fgetc(tempFile);
+
+            ///Para guardar el CommonData
+            if (index < commonDataLength) {
+                commonDataTotal[index] = byteValue;
             }
-        } else {
-            actualResult = "1";
-            if (aS3.substr(0, 1) == "1") {
-                actualResult = "0";
+                ///Para guardar el PixelData
+            else {
+                pixelDataTotal[index - commonDataLength] = byteValue;
+                cout << "pixelDataTotal: " << index - commonDataLength << " -> " << pixelDataTotal[index - commonDataLength] << endl;
             }
+
+            ///Incrementa el indice
+            index++;
+
         }
 
-        //cout << aS1.substr(0, 1) << " + " << aS2.substr(0, 1) << " = " << actualResult << endl;
+        //Cierra el tempFile al terminar de leer
+        fclose(tempFile);
 
-        //cout << aS3.substr(0, 1) << " + " << actualResult;
+    }
+    else {
 
-        /*
-        if (actualResult == aS3.substr(0, 1)) {
-            actualResult = "0";
-        } else {
-            actualResult = "1";
-        }*/
-
-        //cout << " = " << actualResult << endl;
-
-        ///Lo agrega al archivo
-        fputc(stoi(actualResult), parityFile);
-        //ar[i] = actualResult;
-
-        ///Borra el numero ya comparado de los binaryData's temporales
-        aS1.erase(0, 1);
-        aS2.erase(0, 1);
-        aS3.erase(0, 1);
+        printf("\nFile not found.");
+        return false;
 
     }
 
+    ///Se escribe  el commonData de la imagen original en las tres divisiones
+    for (int i = 0; i < commonDataLength; i++) {
+
+        ///Escritura a cada nuevo archivo
+        fputc(commonDataTotal[i], file_1of3);
+        fputc(commonDataTotal[i], file_2of3);
+        fputc(commonDataTotal[i], file_3of3);
+
+        //cout << i << "-> " << "1: " << commonDataTotal[i] << " 2: " << commonDataTotal[i] << " 3: " << commonDataTotal[i] << endl;
+
+    }
+
+    byteQuantityWOC = index - commonDataLength;
+    int byteQuantityWOCC = index - commonDataLength - 1;
+
+    ///Calculara una aproximacion cercana a una igualdad en la particion de pixeles de las nuevas imagenes
+    if ( (byteQuantityWOC % 3) == 1) {
+        cout << "\n(%3: " << (byteQuantityWOC % 3) << ") -> +" << 2 <<  endl;
+        byteQuantityWOC += 2;
+        cout << "byteQuantityWOC(for split): " << byteQuantityWOC << endl;
+    }
+    else if ( (byteQuantityWOC % 3) == 2) {
+        cout << "\n(%3: " << (byteQuantityWOC % 3) << ") -> +" << 1 <<  endl;
+        byteQuantityWOC += 1;
+        cout << "byteQuantityWOC(for split): " << byteQuantityWOC << endl;
+    }
+    else {
+        cout << "\n(%3: " << (byteQuantityWOC % 3) << ") -> +" << 0 <<  endl;
+    }
+
+    ///Size del tercio de la imagen
+    int aFileThird = byteQuantityWOC / 3;
+
+    cout << "aFileThird(after split): " << aFileThird << endl;
+
+    ///Se escribe  el pixelData de la imagen original en las tres divisiones por separado
+    for (int i = 0; i < byteQuantityWOC; i++) {
+
+        ///Para la primera imagen: La parte central y de mas abajo seran blancas.
+        if (i < aFileThird) {
+
+            fputc(pixelDataTotal[i], file_1of3);
+            fputc(255, file_2of3);
+            fputc(255, file_3of3);
+
+        }
+            ///Para la segunda imagen: La parte de mas arriba y de mas abajo seran blancas.
+        else if (i < aFileThird*2) {
+
+            fputc(255, file_1of3);
+            fputc(pixelDataTotal[i], file_2of3);
+            fputc(255, file_3of3);
+
+        }
+            //////Para la tercera imagen: La parte de mas arriba y central seran blancas.
+        else {
+
+            fputc(255, file_1of3);
+            fputc(255, file_2of3);
+            fputc(pixelDataTotal[i], file_3of3);
+
+        }
+
+    }
+
+    ///Elimina la imagen entera ya que esta no se necesita en el RAID
+    remove(directory.c_str());
+
+    return true;
 }
+
+
+
 
 
 
@@ -692,4 +1149,8 @@ int RAIDController::getParityDiskIndex() {
 void RAIDController::setParityDiskIndex(int _parityDiskIndex) {
     parityDiskIndex = _parityDiskIndex;
 }
+
+
+
+
 

@@ -17,40 +17,50 @@ using namespace std;
 class Image {
 
 private:
-    string nombre;
-    string rawBinString;
+    string name;
+    string rawHexString;
+    string tempDirectory;
+    int byteQuantity;
+
+
+
     string modBinString;
     int additionalBytes;
 
 public:
     ///Constructores
     Image(string _nombre);
-    Image(string _nombre, string _rawBinaryString);
+    Image(string _nombre, string _rawHexadecimalString);
 
     ///Metodos
+    int getFileSizeFromDirectory();
+
+
+
+
+
     string decimalToBinary(int d);
     int binaryToDecimal(string b);
-
-    string setBinaryDataForStorage();
 
     string toBinary();
     void toBmp();
 
     void split();
 
-    bool save();
-
     void testImage();
     void getHeader();
     void printBytes();
-    int getFileLength();
     void recreateFile();
 
     ///Getters & Setters
     string getNombre();
     void setNombre(string _nombre);
-    string getRawBinString();
-    void setRawBinString(string _rawBinString);
+    string getRawHexString();
+    void setRawHexString(string _rawHexString);
+    string getTempDirectory();
+    void setTempDirectory(string _tempDirectory);
+    int getByteQuantity();
+    void setByteQuantity(int _byteQuantity);
 
 };
 
