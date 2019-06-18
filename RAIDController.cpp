@@ -31,7 +31,6 @@ RAIDController::RAIDController() {
     TICDirectory = "/home/ruben/Desktop/Proyectos Git/MyInvincibleLibrary-RAIDLibrary/TemporalImageContainer/";
     DCDirectory = "/home/ruben/Desktop/Proyectos Git/MyInvincibleLibrary-RAIDLibrary/DisksContainer/";
 
-
     actualSplit1 = "";
     actualSplit2 = "";
     actualSplit3 = "";
@@ -52,7 +51,7 @@ RAIDController::RAIDController() {
  * Guarda la imagen en los discos (RAID)
  * @return true, si es agregada
  */
-bool RAIDController::write(Image *newImage) {
+bool RAIDController::write(Image* newImage) {
 
     ///Flag
     bool isWritten = true;
@@ -115,9 +114,12 @@ bool RAIDController::hexDataToBMP(string name, string hexData) {
     int byteValue;
     int index = 0;
     string actualByte;
+
+    cout << hexData << endl;
+
     float totalByteLength = hexData.length() / 2;
 
-    actualImage->setByteQuantity(totalByteLength);
+    //actualImage->setByteQuantity(totalByteLength);
 
     cout << "totalByteLength: " << totalByteLength << endl;
 
@@ -145,6 +147,8 @@ bool RAIDController::hexDataToBMP(string name, string hexData) {
                 //cout << index << ": " << EOF << endl;
 
             } else {
+
+
 
                 ///Lectura del bitString
 
@@ -181,7 +185,7 @@ bool RAIDController::hexDataToBMP(string name, string hexData) {
     cout << "Recreation Completed: " << 100.00 << "%" << endl;
     cout << "\nRecreation complete: " + newFileName + " created.\n" << endl;
 
-    //fclose(newFile);
+    fclose(newFile);
 
     return true;
 }
@@ -295,9 +299,9 @@ bool RAIDController::split() {
 
     ///Calculara una aproximacion cercana a una igualdad en la particion de pixeles de las nuevas imagenes
     if ( (fileLength % 3) == 1) {
-        fileLength += 2;
+        //fileLength += 2;
     } else if ( (fileLength % 3) == 2) {
-        fileLength += 1;
+        //fileLength += 1;
     }
 
     cout << "fileLength: " << fileLength << ".   %3: " << (fileLength % 3) << endl;
@@ -339,9 +343,17 @@ bool RAIDController::split() {
 
     }
 
-    //fclose(file_1of3);
-    //fclose(file_2of3);
-    //fclose(file_3of3);
+    fputc(EOF, file_1of3);
+    fputc(EOF, file_2of3);
+    fputc(EOF, file_3of3);
+
+    fclose(file_1of3);
+    fclose(file_2of3);
+    fclose(file_3of3);
+
+    //delete(file_1of3);
+    //delete(file_2of3);
+    //delete(file_3of3);
 
     return true;
 }
@@ -551,10 +563,10 @@ bool RAIDController::XORParity() {
     fclose(parityFile);
 
     ///Elimina la imagen entera ya que esta no se necesita en el RAID
-    remove(temporalDirectory.c_str());
+    //remove(temporalDirectory.c_str());
 
     ///Tests de la paridad
-    verifyParity();
+    //verifyParity();
 
     return true;
 }
@@ -570,7 +582,7 @@ bool RAIDController::XORParity() {
 void RAIDController::verifyParity() {
 
     ///Variables para el recorrido
-    int byteValue;
+    int byteValue = 0;
     int index = 0;
 
 
@@ -619,8 +631,373 @@ void RAIDController::verifyParity() {
     cout << actualSplit3.length() << "\n" << endl;
     cout << actualParity.length() << "\n" << endl;
 
+    fclose(tempFile);
+
 
 }
+
+
+
+/////////////////////////////////////////////////////READ////////////////////////////////////////////////////////////
+
+
+
+/**
+ *
+ * @param name
+ * @return
+ */
+bool RAIDController::read(string name) {
+
+    joinBinary(name);
+
+    return true;
+}
+
+
+
+/**
+ *
+ * @param name
+ * @return
+ */
+bool RAIDController::joinBinary(string name) {
+
+    string image1disk;
+    string image2disk;
+    string image3disk;
+
+    for (int i = 0; i < 4; i++) {
+
+        string tempDirectory = DCDirectory + "Disk" + to_string(i) + "/1_" + name;
+
+        ///Para abrir la imagen original
+        FILE *tempFile;
+        tempFile = fopen(tempDirectory.c_str(), "rb");
+
+        if (tempFile != nullptr) {
+            cout << "Found: " << i << endl;
+
+            fclose(tempFile);
+            image1disk = to_string(i);
+        }
+
+    }
+
+    if (image1disk == "1") {
+        image2disk = "2";
+        image3disk = "3";
+    } else if (image1disk == "2") {
+        image2disk = "3";
+        image3disk = "0";
+    } else if (image1disk == "3") {
+        image2disk = "0";
+        image3disk = "1";
+    } else {
+        image2disk = "1";
+        image3disk = "2";
+    }
+
+
+    ///Tamaño total de la imagen
+    int fileLength = getActualImageFileLength(image1disk, name);
+
+    cout << "\n\n\n\nfileLength: " << fileLength << endl;
+
+
+    ///Creacion del nombre de los archivos que poseen la imagen separada
+    string image_1of3 = DCDirectory + "Disk" + image1disk + "/1_" + name;
+    string image_2of3 = DCDirectory + "Disk" + image2disk + "/2_" + name;
+    string image_3of3 = DCDirectory + "Disk" + image3disk + "/3_" + name;
+
+    ///Creacion en folder "Disks Container/DiskN" los archivos nuevos
+    FILE* file_1of3 = fopen(image_1of3.c_str(),"rb");
+    FILE* file_2of3 = fopen(image_2of3.c_str(),"rb");
+    FILE* file_3of3 = fopen(image_3of3.c_str(),"rb");
+
+
+
+    ///Size solo del tercio de la imagen
+    int aFileThird = fileLength / 3;
+
+    cout << "aFileThird: " << aFileThird << endl;
+
+    ///Variables para el recorrido
+    int byteValue1;
+    int byteValue2;
+    int byteValue3;
+    int index = 0;
+    string actualbyte;
+
+    ///Para crear la imagen original
+    string directory = TICDirectory + "fB_" + name;
+    FILE *originalFile;
+    originalFile = fopen(directory.c_str(), "a");
+
+    ///Primera parte por recorrer
+
+
+    ///Recorrido para obtener el commonData y el PixelData
+    if (file_1of3 != nullptr) {
+        cout << "1index: " << index << endl;
+        while (byteValue1 != EOF) {
+            byteValue1 = fgetc(file_1of3);
+            byteValue2 = fgetc(file_2of3);
+            byteValue3 = fgetc(file_3of3);
+
+            ///Para guardar el CommonData
+            if (index < 138 + aFileThird) {
+
+                ///Escribe el valor al nuevo archivo
+                fputc(byteValue1, originalFile);
+
+            }
+                ///Para guardar el PixelData
+            else {
+                ///Incrementa el indice
+                index++;
+                break;
+            }
+
+            ///Incrementa el indice
+            index++;
+        }
+
+        ///Cierra el file al terminar de leer
+        fclose(file_1of3);
+
+    } if (file_2of3 != nullptr) {
+
+        cout << "2index: " << index << endl;
+        while (byteValue2 != EOF) {
+            //byteValue1 = fgetc(file_1of3);
+            byteValue2 = fgetc(file_2of3);
+            byteValue3 = fgetc(file_3of3);
+
+            ///Para guardar el CommonData
+            if (index < 138 + aFileThird*2) {
+
+                ///Escribe el valor al nuevo archivo
+                fputc(byteValue2, originalFile);
+
+            }
+                ///Para guardar el PixelData
+            else {
+                ///Incrementa el indice
+                index++;
+                break;
+            }
+
+            ///Incrementa el indice
+            index++;
+        }
+
+        ///Cierra el file al terminar de leer
+        fclose(file_2of3);
+
+    } if (file_3of3 != nullptr) {
+        cout << "3index: " << index << endl;
+        while (byteValue3 != EOF) {
+            //byteValue1 = fgetc(file_1of3);
+            //byteValue2 = fgetc(file_2of3);
+            byteValue3 = fgetc(file_3of3);
+
+            ///Para guardar el CommonData
+            if (index < 138 + aFileThird*3) {
+
+                ///Escribe el valor al nuevo archivo
+                fputc(byteValue3, originalFile);
+
+            }
+                ///Para guardar el PixelData
+            else {
+                ///Incrementa el indice
+                index++;
+                break;
+            }
+
+            ///Incrementa el indice
+            index++;
+        }
+
+        fputc(EOF, originalFile);
+
+        ///Cierra el file al terminar de leer
+        fclose(file_3of3);
+
+    }
+
+
+    else {
+
+        printf("\nFile not found.");
+        return false;
+
+    }
+
+    cout << "ENDindex: " << index << endl;
+
+
+
+
+    return false;
+}
+
+
+
+
+/**
+ * Muestra el tamaño del archivo (cantidad de bytes)
+ * @return int
+ */
+int RAIDController::getActualImageFileLength(string disk, string name) {
+
+    ///Creacion del nombre de los archivos que poseen la imagen separada
+    string image_1of3 = DCDirectory + "Disk" + disk + "/1_" + name;
+
+    ///Para abrir la imagen
+    ifstream image( image_1of3.c_str(), ios::binary | ios::in);
+
+    if (!image) {
+        cout << "Could not open. ( getActualImageFileLength(a,b) )" << endl;
+    } else {
+        //cout << "Success." << endl;
+    }
+
+
+    ///Toma el tama;o del archivo
+    image.seekg(0,ifstream::end);
+    long size = image.tellg();
+    image.seekg(0);
+
+    cout << "\nFile Length: " << size << endl;
+
+    image.close();
+
+    return size;
+
+}
+
+
+///////////////////////////////////////////////////////////SEEK//////////////////////////////////////////////////
+
+
+/**
+ *
+ * @param name
+ * @return
+ */
+string RAIDController::seek(string name) {
+
+    string actualDirectory = getDirectory(name);
+
+    string hexData = BMPtoHexData(actualDirectory);
+
+    return hexData;
+
+}
+
+
+/**
+ *
+ * @param name
+ * @return
+ */
+string RAIDController::getDirectory(string name) {
+
+    string dir = TICDirectory + "fB_" + name;
+
+    return dir;
+
+}
+
+
+
+
+/**
+ * Hace una lectura de los bytes de la imagen .bmp y guarda cada uno, en binario.
+ * @return bitString
+ */
+string RAIDController::BMPtoHexData(string directory) {
+
+    ///restauracion de binaryData
+
+    ///Variables para el recorrido
+    string binaryData;
+    int byteValue;
+    int index = 0;
+
+    ///Para abrir la imagen
+    FILE *file;
+    file = fopen(directory.c_str(), "rb");
+
+
+    if (file != NULL) {
+
+        while (byteValue != EOF) {
+            if (index >= 0) {
+
+                byteValue = fgetc(file);
+
+                binaryData += decimalToHex(byteValue);
+
+            }
+            index++;
+        }
+
+        fclose(file);
+
+    } else {
+
+        printf("\nFile not found.");
+
+        return "";
+
+    }
+
+    return binaryData;
+
+}
+
+
+
+/**
+ * Convierte un numero decimal a hexadecimal.
+ * @param d
+ * @return h
+ */
+string RAIDController::decimalToHex(int d) {
+
+    stringstream ss;
+    ss<< hex << d;
+    string h ( ss.str() );
+
+    if (h.length() < 2) {
+        h = "0" + h;
+    }
+
+    return h;
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -674,6 +1051,7 @@ bool RAIDController::saveImage(Image *newImage) {
  * Muestra el tamaño del archivo (cantidad de bytes)
  * @return int
  */
+ /*
 int RAIDController::getActualImageFileLength(string name) {
 
     ///Para abrir la imagen
@@ -695,7 +1073,7 @@ int RAIDController::getActualImageFileLength(string name) {
 
     return size;
 
-}
+}*/
 
 
 
@@ -1149,6 +1527,12 @@ int RAIDController::getParityDiskIndex() {
 void RAIDController::setParityDiskIndex(int _parityDiskIndex) {
     parityDiskIndex = _parityDiskIndex;
 }
+
+
+
+
+
+
 
 
 

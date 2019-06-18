@@ -39,6 +39,9 @@ public:
 
     ///Metodos
 
+
+    ///Write
+
     bool write(Image *newImage);
     bool hexDataToBMP(string name, string hexData);
     int hexToDecimal(string h);
@@ -48,17 +51,26 @@ public:
     bool brokenBinary();
     bool XORParity();
 
-
-
     void verifyParity();
 
 
+    ///Read
 
-    int getActualImageFileLength(string name);
+    bool read(string name);
+    bool joinBinary(string name);
+    int getActualImageFileLength(string disk, string name);
+
+
+    ///Seek
+
+    string seek(string name);
+    string getDirectory(string name);
+    string BMPtoHexData(string directory);
+    string decimalToHex(int d);
 
 
 
-
+/////////////////////////////////////////////
     bool saveImage(Image *newImage);
 
     bool binaryDataToBMP();
