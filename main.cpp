@@ -307,11 +307,18 @@ string raidWrite(string name, string hexData, string key) {
 
 }
 
-
+/**
+ *
+ * @param selectImage
+ * @param keySelectImage
+ * @return
+ */
 string sendSelectImage(string selectImage, string keySelectImage) {
 
-    string hexData = raidController->seek(selectImage);
+    ///Se envia la imagen al raidController para que sea guardada en discos
+    bool isWritten = raidController->read(selectImage);
 
+    string hexData = raidController->seek(selectImage);
 
     ///Preparacion del JSON por enviar
     json_object *jobjSelectImage = json_object_new_object();
